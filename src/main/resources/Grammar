@@ -1,0 +1,34 @@
+FileClass -> VariableList Constructor(Function) FunctionList ClassList
+
+ClassList -> ClassList Class |
+             Class |
+             /* empty */
+
+Class -> VariableList Constructor(Function) FunctionList
+
+FunctionList -> FunctionList Function |
+                Function |
+                /* empty */
+
+Function -> ParameterList VariableList Return
+
+ParameterList -> ParameterList PARAM |
+                 PARAM |
+                 /* empty */
+
+VariableList -> VariableList Var |
+                Var |
+                /* empty */
+
+Return -> CONST |
+          Var |
+          CallFunction |
+          /* empty */
+
+Var -> ID CONST |
+       ID CallFunction |
+       ID
+
+CallFunction -> ID.CallFunction |
+                FUN_NAME ( ParameterList ) |
+                FUN_NAME ()

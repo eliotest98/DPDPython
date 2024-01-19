@@ -1,0 +1,9 @@
+The project is divided into two main packages:
+ - python: in this folder there is the source code of tool
+ - resources: in this folder there is documents or file auto generated
+
+In python folder there are four packages:
+ - Core: in this package there are the main classes for execute the detection
+ - Objects: in this package there are all file Objects for create the Abstract Syntax Tree
+ - Oracle: in this folder there are examples of Design Patterns and the relative Compile class
+ - Readers: in this folder there are the readers for read the bytecode
