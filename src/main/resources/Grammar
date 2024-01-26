@@ -1,4 +1,4 @@
-FileClass -> VariableList Constructor(Function) FunctionList ClassList
+FileClass -> FromList ImportList VariableList Constructor(Function) FunctionList ClassList
 
 ClassList -> ClassList Class |
              Class |
@@ -23,6 +23,7 @@ VariableList -> VariableList Var |
 Return -> CONST |
           Var |
           CallFunction |
+          ITER                                      (For, While)
           /* empty */
 
 Var -> ID CONST |
@@ -32,3 +33,15 @@ Var -> ID CONST |
 CallFunction -> ID.CallFunction |
                 FUN_NAME ( ParameterList ) |
                 FUN_NAME ()
+
+FromList -> FromList From |
+            From |
+            /* empty */
+
+From -> FROM CONST Import
+
+ImportList -> ImportList Import |
+              Import |
+              /* empty */
+
+Import -> IMPORT CONST

@@ -1,4 +1,4 @@
-from bytecode import bytecode
+from bytecode import bytecode, Label
 
 from Objects.FunctionObject import FunctionObject
 from Objects.VariableObject import VariableObject
@@ -19,9 +19,26 @@ class ClassReader:
         # List the instructions
         while i < len(by):
             instruction = by[i]
+            if isinstance(instruction, Label):
+                i = i + 1
+                continue
             if debug_active == 1:
                 print(instruction)
             match instruction.name:
+
+                case "POP_JUMP_IF_FALSE":
+                    # This instruction is an if statement
+                    # An if statement is formed in order from:
+                    # - instructions for comparison
+                    # - POP_JUMP_IF_FALSE
+                    # - instructions
+                    # - JUMP_FORWARD
+                    # - Label jump
+                    while not isinstance(by[i], Label):
+                        if by[i].name == "JUMP_FORWARD":
+                            i = i + 1
+                        i = i + 1
+
                 case "LOAD_NAME":
                     # LOAD_NAME is the first token invoked when create a class.
                     # A class is form with 4 informations in order:
@@ -52,13 +69,6 @@ class ClassReader:
                         # - LOAD_CONST
                         # - MAKE_FUNCTION
                         # - STORE_NAME
-                        # If a LOAD_CONST is not an object is a variable
-                        # This instruction contains the assignment value of variable
-                        # The next instruction if is a variable is a STORE_NAME,
-                        # The variabile have in order:
-                        # - LOAD_CONST the value if initialized
-                        # - STORE_NAME the name of variable
-
                         next_instructions = [by[i + 1], by[i + 2], by[i + 3]]
                         if next_instructions[2].name == "STORE_NAME":
 
@@ -83,8 +93,44 @@ class ClassReader:
                                 class_object.set_constructor(function)
 
                             i = i + 3
-                        # Is a variable
                         else:
+                            # Another type of function have in order:
+                            # - LOAD_CONST
+                            # - LOAD_NAME
+                            # - BUILD_TUPLE
+                            # - LOAD_CONST
+                            # - MAKE_FUNCTION
+                            # - STORE_NAME
+                            if next_instructions[1].name == "BUILD_TUPLE":
+                                next_instructions.append(by[i + 4])
+                                next_instructions.append(by[i + 5])
+                                next_instructions.append(by[i + 6])
+                                function_return_type = next_instructions[0].arg
+
+                                function_name = next_instructions[5].arg
+
+                                # Create a Function Object
+                                function = FunctionObject()
+                                function.set_function_name(function_name)
+
+                                # Get the bytecode of internal function
+                                new_byte = bytecode.Bytecode.from_code(next_instructions[2].arg)
+
+                                # Start a function reader for read the internal function
+                                function_reader = FunctionReader()
+                                function_reader.read_function(function, new_byte, debug_active)
+
+                                # Add function at list of functions of the class
+                                class_object.add_function(function)
+
+                                i = i + 6
+
+                            # If a LOAD_CONST is not an object is a variable
+                            # This instruction contains the assignment value of variable
+                            # The next instruction if is a variable is a STORE_NAME,
+                            # The variabile have in order:
+                            # - LOAD_CONST the value if initialized
+                            # - STORE_NAME the name of variable
                             if next_instructions[0].name == "STORE_NAME":
                                 # Create a Variable Object
                                 variable = VariableObject()

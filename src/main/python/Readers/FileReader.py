@@ -1,7 +1,8 @@
-from bytecode import bytecode
+from bytecode import bytecode, Label
 
 from Objects.CallFunctionObject import CallFunctionObject
 from Objects.ClassObject import ClassObject
+from Objects.ImportObject import ImportObject
 from Objects.VariableObject import VariableObject
 from Readers.ClassReader import ClassReader
 from Objects.FunctionObject import FunctionObject
@@ -26,9 +27,27 @@ class FileReader:
         # List the instructions
         while i < len(by):
             instruction = by[i]
+            if isinstance(instruction, Label):
+                i = i + 1
+                continue
             if debug_active == 1:
                 print(instruction)
             match instruction.name:
+
+                case "POP_JUMP_IF_FALSE":
+                    # This instruction is an if statement
+                    # An if statement is formed in order from:
+                    # - instructions for comparison
+                    # - POP_JUMP_IF_FALSE
+                    # - instructions
+                    # - JUMP_FORWARD
+                    # - Label jump
+                    while not isinstance(by[i], Label):
+                        if by[i].name == "JUMP_FORWARD":
+                            i = i + 1
+                        i = i + 1
+                    file_object.add_instruction("<IF>If Statement</IF>")
+
                 case "LOAD_BUILD_CLASS":
                     # This token is invoked when create a new class instance
                     # The class instance is formed in order from:
@@ -65,33 +84,78 @@ class FileReader:
                         i = i + 1
                         continue
                     else:
+
+                        next_instructions = [by[i + 1], by[i + 2], by[i + 3], by[i + 4], by[i + 5]]
+
+                        # If a LOAD_CONST have in order:
+                        # - LOAD_CONST
+                        # - IMPORT_NAME
+                        # - STORE_NAME
+                        # is an import sentence
+                        if next_instructions[1].name == "IMPORT_NAME":
+                            # Create an import object
+                            import_object = ImportObject()
+
+                            # If a LOAD_CONST have in order:
+                            # - LOAD_CONST
+                            # - IMPORT_NAME
+                            # - STORE_NAME
+                            # is an import sentence
+                            if next_instructions[2].name == "STORE_NAME":
+                                import_object.add_string(next_instructions[1].arg)
+
+                                # Add import at class
+                                file_object.add_import(import_object)
+                                i = i + 3
+                                continue
+
+                            # There is another form with:
+                            # - LOAD_CONST
+                            # - IMPORT_NAME
+                            # - IMPORT_FROM
+                            # - STORE_NAME
+                            # in this case is a form import sentence
+                            # And another:
+                            # - LOAD_CONST
+                            # - IMPORT_NAME
+                            # - IMPORT_FROM
+                            # - STORE_NAME
+                            # - IMPORT_FROM
+                            # - STORE_NAME
+                            # in this case is a form import with a list of params in a sentence
+                            if next_instructions[2].name == "IMPORT_FROM":
+                                # Create an import object
+                                import_object = ImportObject()
+                                import_object.set_from_name(next_instructions[1].arg)
+                                count = i + 3
+                                while by[count].name == "IMPORT_FROM":
+                                    new_next_instructions = [by[count], by[count + 1]]
+                                    import_object.add_string(new_next_instructions[1].arg)
+
+                                    count = count + 2
+                                    i = i + 2
+
+                                # Add import at class
+                                file_object.add_import(import_object)
+
                         # If a LOAD_CONST is an object is a function
                         # This instruction contains the body of function
                         # The next 3 instruction contains the name of function in order:
                         # - LOAD_CONST
                         # - MAKE_FUNCTION
                         # - STORE_NAME
-                        # If a LOAD_CONST is not an object is a variable
-                        # This instruction contains the assignment value of variable
-                        # The next instruction if is a variable is a STORE_NAME,
-                        # The variabile have in order:
-                        # - LOAD_CONST the value if initialized
-                        # - STORE_NAME the name of variable
-
-                        next_instructions = [by[i + 1], by[i + 2], by[i + 3]]
                         if next_instructions[2].name == "STORE_NAME":
                             function_name = next_instructions[2].arg
 
                             # Create a Function Object
                             function = FunctionObject()
                             function.set_function_name(function_name)
-
                             # Get the bytecode of internal function
                             new_byte = bytecode.Bytecode.from_code(instruction.arg)
 
                             # Start a function reader for read the internal function
                             function_reader = FunctionReader()
-                            function_reader.read_function(function, new_byte)
+                            function_reader.read_function(function, new_byte, debug_active)
 
                             # Add function at list of functions of the class
                             file_object.add_function(function)
@@ -101,16 +165,21 @@ class FileReader:
                                 file_object.set_constructor(function)
 
                             i = i + 3
-                        # Is a variable
-                        else:
-                            if next_instructions[0].name == "STORE_NAME":
-                                # Create a Variable Object
-                                variable = VariableObject()
-                                variable.set_variable_name(next_instructions[0].arg)
-                                variable.set_argument(instruction.arg)
 
-                                file_object.add_variable(variable)
-                                i = i + 1
+                        # If a LOAD_CONST is not an object is a variable
+                        # This instruction contains the assignment value of variable
+                        # The next instruction if is a variable is a STORE_NAME,
+                        # The variabile have in order:
+                        # - LOAD_CONST the value if initialized
+                        # - STORE_NAME the name of variable
+                        if next_instructions[0].name == "STORE_NAME":
+                            # Create a Variable Object
+                            variable = VariableObject()
+                            variable.set_variable_name(next_instructions[0].arg)
+                            variable.set_argument(instruction.arg)
+
+                            file_object.add_variable(variable)
+                            i = i + 1
 
                 case "LOAD_NAME":
                     # This instruction is the name of function for call it
@@ -125,8 +194,8 @@ class FileReader:
                     # - CALL_FUNCTION
                     # - CALL_FUNCTION
                     # Another possibility is a variable with a call function
-                    # In this case in order have: P.S. There is a four option and is the combination of
-                    # previous possibility
+                    # P.S. There is a four option and is the combination of previous possibility
+                    # In this case in order have:
                     # - LOAD_NAME | LOAD_NAME * 2
                     # - CALL_FUNCTION | CALL_FUNCTION * 2
                     # - STORE_NAME
@@ -151,6 +220,17 @@ class FileReader:
                     if by[i].name == "LOAD_METHOD":
                         method_name = by[i].arg
                         i = i + 1
+
+                    # is a system call with a param
+                    if by[i].name == "LOAD_CONST":
+                        # Create a Call Function Object
+                        call_function_object = CallFunctionObject()
+
+                        call_function_object.set_method_name(instruction.arg)
+                        call_function_object.add_parameter(by[i].arg)
+                        file_object.add_instruction(call_function_object)
+                        i = i + 1
+                        continue
 
                     while len(next_instructions) != 0:
                         # Create a Call Function Object
