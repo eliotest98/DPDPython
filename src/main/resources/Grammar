@@ -1,47 +1,88 @@
-FileClass -> FromList ImportList VariableList Constructor(Function) FunctionList ClassList
+FileClass -> ImportList VariableList Constructor(Function) FunctionList InstructionList ClassList
 
-ClassList -> ClassList Class |
-             Class |
+FunctionList -> Function FunctionList |
+                Function              |
+                /* empty */
+
+ClassList -> Class ClassList |
+             Class           |
              /* empty */
 
-Class -> VariableList Constructor(Function) FunctionList
+Class -> LOAD_BUILD_CLASS LOAD_CONST(BodyClass) LOAD_CONST MAKE_FUNCTION LOAD_CONST CALL_FUNCTION STORE_NAME
 
-FunctionList -> FunctionList Function |
-                Function |
+BodyClass -> LOAD_NAME STORE_NAME LOAD_CONST STORE_NAME ImportList VariableList Constructor(Function) FunctionList InstructionList ReturnValue
+
+VariableList -> Variable VariableList |
+                Variable              |
                 /* empty */
 
-Function -> ParameterList VariableList Return
-
-ParameterList -> ParameterList PARAM |
-                 PARAM |
-                 /* empty */
-
-VariableList -> VariableList Var |
-                Var |
-                /* empty */
-
-Return -> CONST |
-          Var |
-          CallFunction |
-          ITER                                      (For, While)
-          /* empty */
-
-Var -> ID CONST |
-       ID CallFunction |
-       ID
-
-CallFunction -> ID.CallFunction |
-                FUN_NAME ( ParameterList ) |
-                FUN_NAME ()
-
-FromList -> FromList From |
-            From |
-            /* empty */
-
-From -> FROM CONST Import
-
-ImportList -> ImportList Import |
+ImportList -> Import ImportList |
               Import |
               /* empty */
 
-Import -> IMPORT CONST
+Variable -> LOAD_CONST STORE_NAME                           |
+            LOAD_NAME STORE_NAME                            |
+            LOAD_CONST LOAD_CONST BUILD_MAP STORE_NAME      |
+            BUILD_LIST LOAD_CONST LIST_EXTEND STORE_NAME    |
+            BUILD_SET LOAD_CONST SET_UPDATE STORE_NAME      |
+            CallMethod STORE_NAME                           |
+            CallFunction STORE_NAME                         |
+            Cicle STORE_NAME                                 Questa sa da vedere e da fare
+
+Import -> LOAD_CONST LOAD_CONST IMPORT_NAME STORE_NAME             |
+          LOAD_CONST LOAD_CONST IMPORT_NAME IMPORT_FROM STORE_NAME
+
+Function -> LOAD_CONST(BodyFunction) LOAD_CONST MAKE_FUNCTION STORE_NAME |
+            LOAD_CONST Function                                          |
+            LOAD_CONST LOAD_NAME BUILD_TUPLE Function
+
+BodyFunction -> ImportList VariableList InstructionList ReturnValue
+
+ReturnValue -> LOAD_CONST RETURN_VALUE |
+               LOAD_FAST RETURN_VALUE  |
+               CallMethod RETURN_VALUE
+
+Variable(Function) -> LOAD_CONST STORE_FAST                                     |
+                      LOAD_CONST LOAD_FAST STORE_ATTR                           |
+                      LOAD_FAST STORE_FAST                                      |
+                      LOAD_FAST STORE_FAST STORE_ATTR                           |
+                      LOAD_CONST LOAD_CONST BUILD_MAP STORE_FAST                |
+                      LOAD_CONST LOAD_CONST BUILD_MAP STORE_FAST STORE_ATTR     |
+                      BUILD_LIST LOAD_CONST LIST_EXTEND STORE_FAST              |
+                      BUILD_LIST LOAD_CONST LIST_EXTEND STORE_FAST STORE_ATTR   |
+                      BUILD_SET LOAD_CONST SET_UPDATE STORE_FAST                |
+                      BUILD_SET LOAD_CONST SET_UPDATE STORE_FAST STORE_ATTR     |
+                      CallMethod STORE_FAST                                     | Questa sa da fare
+                      CallMethod STORE_FAST STORE_ATTR                          | Questa sa da fare
+                      CallFunction STORE_FAST                                   | Questa sa da fare
+                      CallFunction STORE_FAST STORE_ATTR                        | Questa sa da fare
+                      Cicle STORE_FAST                                          | Questa sa da vedere e da fare
+                      Cicle STORE_FAST STORE_ATTR                               | Questa sa da vedere e da fare
+
+Import(Function) -> LOAD_CONST LOAD_CONST IMPORT_NAME STORE_FAST             |
+                    LOAD_CONST LOAD_CONST IMPORT_NAME IMPORT_FROM STORE_FAST
+
+InstructionList -> Instruction InstructionList |
+                   Instruction |
+                   /* empty */
+
+Instruction -> CallFunction |
+               CallMethod   |
+               Cicle         Questa sa da vedere e da fare
+
+CallMethod -> LOAD_NAME LOAD_METHOD CALL_METHOD             |
+              LOAD_NAME LOAD_ATTR LOAD_METHOD CALL_METHOD   |
+              CallMethod.CallMethod                         |
+              CallMethod.CallFunction                       |
+              LOAD_NAME LOAD_ATTR LOAD_METHOD CALL_METHOD   |
+              LOAD_NAME BodyCallFunction LOAD_METHOD CALL_METHOD|
+
+CallFunction -> LOAD_NAME BodyCallFunction CALL_FUNCTION    |
+                LOAD_GLOBAL BodyCallFunction CALL_FUNCTION
+
+BodyCallFunction -> LOAD_CONST |
+                    LOAD_NAME  |
+                    LOAD_FAST  |
+                    CallMethod
+
+Cicle -> bho

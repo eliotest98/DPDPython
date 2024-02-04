@@ -73,10 +73,6 @@ class ReadBytecode:
         if self.debug_active == 1:
             print(file_name + " End File Reading...")
 
-        if self.debug_active == 1:
-            # Raw AST
-            print(file_object.to_string())
-
         # Get Abstract Syntax Tree from visited class
         ast = file_object.abstract_syntax_tree()
         if self.debug_active == 1:
