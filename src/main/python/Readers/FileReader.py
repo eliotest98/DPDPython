@@ -77,7 +77,10 @@ class FileReader:
                     if by[i + 1].name == "STORE_NAME":
                         i = i + 1
                         continue
-                    elif by[i+1].name == "LOAD_METHOD":
+                    elif by[i + 1].name == "LOAD_METHOD":
+                        i = i + 1
+                        continue
+                    elif by[i + 1].name == "CALL_FUNCTION":
                         i = i + 1
                         continue
 

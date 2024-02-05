@@ -192,11 +192,11 @@ class FunctionReader:
                             other_variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                             # Create the 2* Variable Object
                             variable = VariableObject()
-                            variable.set_variable_name(instruction.arg)
+                            variable.set_variable_name(previous_instructions[1].arg)
                             # Set the 1* Variable Object at 2* Variable Object
-                            variable.set_argument(other_variable)
+                            other_variable.set_argument(variable)
                             # Add the variable at instructions
-                            function_object.add_instruction(variable)
+                            function_object.add_instruction(other_variable)
                         # Variable -> BUILD_LIST LOAD_CONST LIST_EXTEND STORE_FAST STORE_ATTR
                         elif previous_instructions[1].name == "LIST_EXTEND":
                             previous_instructions.append(by[i - 3])

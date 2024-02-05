@@ -199,7 +199,7 @@ class CallFunctionReader:
                             else:
                                 by = [fun_name, fun_name]
                             call_function_object.add_parameter(internal_call_function)
-                            call_function_object.set_method_name(fun_name)
+                            call_function_object.set_method_name(fun_name.arg)
                             count = count + 1
                             continue
                         else:
@@ -210,9 +210,13 @@ class CallFunctionReader:
                     try:
                         if by[i + 1].name == "LOAD_NAME":
                             call_function_object.set_method_name(by[i + 1].arg)
+                            i = i + 1
+                            return by[i + 1]
 
                         if by[i + 1].name == "LOAD_GLOBAL":
                             call_function_object.set_method_name(by[i + 1].arg)
+                            i = i + 1
+                            return by[i + 1]
                     except:
                         pass
 
