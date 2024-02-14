@@ -1,5 +1,9 @@
+from bytecode import Label
+
 from Objects.CallFunctionObject import CallFunctionObject
+from Objects.ImportObject import ImportObject
 from Objects.VariableObject import VariableObject
+from Readers.CallFunctionReader import CallFunctionReader
 
 
 class FunctionReader:
@@ -17,119 +21,440 @@ class FunctionReader:
         # List the instructions
         while i < len(by):
             instruction = by[i]
+            if isinstance(instruction, Label):
+                i = i + 1
+                continue
             if debug_active == 1:
                 print(instruction)
             match instruction.name:
-                case "STORE_FAST":
-                    # If the previous instruction is a LOAD_CONST is a variable.
-                    # The variabile have in order:
-                    # - LOAD_CONST the value if initialized
-                    # - STORE_FAST the name of variable
 
-                    # Get the previous instruction
-                    previous_instruction = by[i - 1]
-                    if previous_instruction.name == "LOAD_CONST":
+                case "RETURN_VALUE":
+                    previous_instructions = [by[i - 1]]
+
+                    # ReturnValue -> LOAD_CONST RETURN_VALUE
+                    if previous_instructions[0].name == "LOAD_CONST":
+                        function_object.set_return_value(
+                            str(type(previous_instructions[0].arg).__name__) + ":" + str(previous_instructions[0].arg))
+                    # ReturnValue -> LOAD_FAST RETURN_VALUE
+                    elif previous_instructions[0].name == "LOAD_FAST":
                         # Create a Variable Object
                         variable = VariableObject()
-                        variable.set_variable_name(instruction.arg)
-                        variable.set_argument(previous_instruction.arg)
-
-                        function_object.add_variable(variable)
-                    # self.variable call
-                    else:
-                        previous_instruction.append(by[i - 2])
-                        variable_name = ""
-                        for instr in previous_instruction:
-                            variable_name = variable_name + instr.arg
-
-                case "LOAD_CONST":
-                    # If LOAD_CONST have an arg is a return value
-                    # The return value have in order:
-                    # - LOAD_CONST
-                    # - RETURN_VALUE
-                    # There is a possibility to have a self.variable call.
-                    # In this case have in order:
-                    # - LOAD_FAST | LOAD_CONST
-                    # - LOAD_FAST
-                    # - STORE_ATTR
-
-                    # Get next instruction
-                    next_instruction = by[i + 1]
-
-                    # If the next instruction is a RETURN_VALUE is a return statement
-                    if next_instruction.name == "RETURN_VALUE":
-                        function_object.set_return_value(instruction.arg)
-                        i = i + 1
-
-                    if next_instruction.name == "LOAD_FAST":
-                        variable_name = next_instruction.arg + "." + by[i + 2].arg
-
-                        variable = VariableObject()
-                        variable.set_variable_name(variable_name)
-                        variable.set_argument(by[i].arg)
-
-                        function_object.add_variable(variable)
-                        i = i + 2
-
-                case "LOAD_FAST":
-                    # Another option for return value is the case of return a variable
-                    # The return value with a variable have in order:
-                    # - LOAD_FAST
-                    # - RETURN_VALUE
-                    # There is a possibility to have a call method for return value
-                    # In this case have in order:
-                    # TODO da controllare se effettivamente c'è questo ordine o ce ne sono anche altri. Sperimentare
-                    # - LOAD_FAST
-                    # - LOAD_ATTR
-                    # - LOAD_METHOD
-                    # - CALL_METHOD
-                    # - RETURN_VALUE
-                    # There is a possibility to have a self.variable call.
-                    # In this case have in order:
-                    # - LOAD_FAST | LOAD_CONST
-                    # - LOAD_FAST
-                    # - STORE_ATTR
-
-                    # If the return value is a variable
-                    next_instruction = by[i + 1]
-                    if next_instruction.name == "RETURN_VALUE":
-                        variable = VariableObject()
-                        variable.set_variable_name(instruction.arg)
+                        variable.set_variable_name(previous_instructions[0].arg)
+                        # Set the return value
                         function_object.set_return_value(variable)
-                        i = i + 1
-                    # Else, the return value is a call function
-                    else:
+                    # ReturnValue -> CALL_METHOD RETURN_VALUE
+                    elif previous_instructions[0].name == "CALL_METHOD":
+                        previous_instruction = list()
+                        count = i - 1
+                        try:
+                            while by[count].name != "POP_TOP" and by[count].name != "NOP" and by[
+                                count].name != "STORE_NAME" and by[count].name != "STORE_FAST" and by[
+                                count].name != "LOAD_FAST":
+                                previous_instruction.append(by[count])
+                                count = count - 1
 
-                        # Create a Call Function Object
+                            previous_instruction.append(by[count])
+
+                            try:
+                                if by[i + 1].name == "CALL_FUNCTION":
+                                    i = i + 1
+                                    continue
+                                elif by[i + 1].name == "LOAD_METHOD":
+                                    i = i + 1
+                                    continue
+                            except:
+                                pass
+
+                        except:
+                            pass
+
+                        # Create a call function object
                         call_function = CallFunctionObject()
-                        call_function_path = ""
-                        next_instructions = [by[i], by[i + 1], by[i + 2]]
 
-                        # Control if next_instruction is a LOAD_FAST
-                        # In this case is a self.variable call
-                        if next_instruction.name == "LOAD_FAST":
-                            variable_name = next_instruction.arg + "." + by[i + 2].arg
+                        call_function_reader = CallFunctionReader()
+                        call_function_reader.read_call_function(call_function, previous_instruction, debug_active)
 
+                        # Add the variable at instructions of file object
+                        function_object.set_return_value(call_function)
+                    else:
+                        print("Not registered")
+                        print(instruction)
+                        print(previous_instructions[0])
+
+                # CallMethod -> LOAD_FAST LOAD_ATTR LOAD_METHOD CALL_METHOD
+                case "CALL_METHOD":
+                    previous_instruction = list()
+                    count = i - 1
+                    previous_instruction.append(instruction)
+                    try:
+                        while by[count].name != "POP_TOP" and by[count].name != "NOP" and by[count].name != "STORE_NAME" \
+                                and by[count].name != "STORE_FAST":
+                            previous_instruction.append(by[count])
+                            count = count - 1
+                    except:
+                        print("")
+
+                    if by[i + 1].name == "CALL_METHOD":
+                        i = i + 1
+                        continue
+                    if by[i + 1].name == "CALL_FUNCTION":
+                        i = i + 1
+                        continue
+                    elif by[i + 1].name == "LOAD_METHOD":
+                        i = i + 1
+                        continue
+                    elif by[i + 1].name == "STORE_NAME":
+                        i = i + 1
+                        continue
+                    elif by[i + 1].name == "LOAD_CONST":
+                        i = i + 1
+                        continue
+                    elif by[i + 1].name == "RETURN_VALUE":
+                        i = i + 1
+                        continue
+
+                    # Create a call function object
+                    call_function = CallFunctionObject()
+
+                    call_function_reader = CallFunctionReader()
+                    call_function_reader.read_call_function(call_function, previous_instruction, debug_active)
+
+                    # Add the call function at instructions of file object
+                    function_object.add_instruction(call_function)
+
+                # CallFunction -> LOAD_GLOBAL Some informations CALL_FUNCTION
+                case "CALL_FUNCTION":
+                    previous_instruction = list()
+                    count = i - 1
+                    previous_instruction.append(instruction)
+                    while by[count].name != "LOAD_GLOBAL":
+                        previous_instruction.append(by[count])
+                        count = count - 1
+                    previous_instruction.append(by[count])
+
+                    if by[i + 1].name == "STORE_FAST":
+                        i = i + 1
+                        continue
+
+                    if by[i + 1].name == "LOAD_FAST":
+                        i = i + 1
+                        continue
+
+                    if by[i + 1].name == "LOAD_METHOD":
+                        i = i + 1
+                        continue
+
+                    # Create a call function object
+                    call_function = CallFunctionObject()
+
+                    call_function_reader = CallFunctionReader()
+                    call_function_reader.read_call_function(call_function, previous_instruction, debug_active)
+
+                    # Add the call function at instructions of function object
+                    function_object.add_instruction(call_function)
+
+                case "STORE_ATTR":
+                    previous_instructions = [by[i - 1]]
+                    # Variable(Function) -> LOAD_CONST LOAD_FAST STORE_ATTR
+                    if previous_instructions[0].name == "LOAD_FAST":
+                        previous_instructions.append(by[i - 2])
+                        # Variable -> LOAD_CONST STORE_FAST STORE_ATTR
+                        if previous_instructions[1].name == "LOAD_CONST":
+                            # Create a variable object
                             variable = VariableObject()
-                            variable.set_variable_name(variable_name)
-                            variable.set_argument(by[i].arg)
-
+                            variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
+                            variable.set_argument(
+                                str(type(previous_instructions[1].arg).__name__) + ":" + str(
+                                    previous_instructions[1].arg))
+                            # Add variabile at variable list of class
                             function_object.add_variable(variable)
-                            i = i + 2
+                        # Variable -> LOAD_FAST STORE_FAST STORE_ATTR
+                        elif previous_instructions[1].name == "LOAD_FAST":
+                            # Create the Variable Object
+                            other_variable = VariableObject()
+                            other_variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
+                            # Create the 2* Variable Object
+                            variable = VariableObject()
+                            variable.set_variable_name(previous_instructions[1].arg)
+                            # Set the 1* Variable Object at 2* Variable Object
+                            other_variable.set_argument(variable)
+                            # Add the variable at instructions
+                            function_object.add_instruction(other_variable)
+                        # Variable -> BUILD_LIST LOAD_CONST LIST_EXTEND STORE_FAST STORE_ATTR
+                        elif previous_instructions[1].name == "LIST_EXTEND":
+                            previous_instructions.append(by[i - 3])
+                            previous_instructions.append(by[i - 4])
+                            previous_instructions.reverse()
+                            # Create a variable object
+                            variable = VariableObject()
+                            # The current instruction contains the name of variable
+                            variable.set_variable_name(previous_instructions[3].arg + "." + instruction.arg)
+                            variable.set_argument(
+                                str(type(previous_instructions[1].arg).__name__) + ":" + str(
+                                    previous_instructions[1].arg))
+                            # Add the variable at variables list:
+                            function_object.add_variable(variable)
+                        # Variable -> LOAD_CONST LOAD_CONST BUILD_MAP STORE_FAST STORE_ATTR
+                        elif previous_instructions[1].name == "BUILD_MAP":
+                            previous_instructions.append(by[i - 3])
+                            previous_instructions.append(by[i - 4])
+                            previous_instructions.reverse()
+                            # Create a variable object
+                            variable = VariableObject()
+                            # The current instruction contains the name of variable
+                            variable.set_variable_name(previous_instructions[3].arg + "." + instruction.arg)
+                            variable.set_argument(previous_instructions[0].arg + ":" + previous_instructions[1].arg)
+
+                            # Add the variable at variables list:
+                            function_object.add_variable(variable)
+                        # Variable -> BUILD_SET LOAD_CONST SET_UPDATE STORE_FAST STORE_ATTR
+                        elif previous_instructions[1].name == "SET_UPDATE":
+                            previous_instructions.append(by[i - 3])
+                            previous_instructions.append(by[i - 4])
+                            previous_instructions.reverse()
+                            # Create a variable object
+                            variable = VariableObject()
+                            # The current instruction contains the name of variable
+                            variable.set_variable_name(previous_instructions[3].arg + "." + instruction.arg)
+                            variable.set_argument(
+                                str(type(previous_instructions[1].arg).__name__) + ":" + str(
+                                    previous_instructions[1].arg))
+                            # Add the variable at variables list:
+                            function_object.add_variable(variable)
+                        # Variable -> CallMethod STORE_FAST STORE_ATTR
+                        elif previous_instructions[1].name == "CALL_METHOD":
+                            previous_instruction = list()
+                            count = i - 1
+                            previous_instruction.append(instruction)
+                            while by[count].name != "POP_TOP" and by[count].name != "NOP" and by[
+                                count].name != "STORE_FAST":
+                                previous_instruction.append(by[count])
+                                count = count - 1
+
+                            self_value = previous_instructions[0]
+
+                            if by[i + 1].name == "CALL_FUNCTION":
+                                i = i + 1
+                                continue
+                            elif by[i + 1].name == "LOAD_METHOD":
+                                i = i + 1
+                                continue
+
+                            # Create a call function object
+                            call_function = CallFunctionObject()
+
+                            call_function_reader = CallFunctionReader()
+                            call_function_reader.read_call_function(call_function, previous_instruction, debug_active)
+
+                            # Create a variable object
+                            variable = VariableObject()
+
+                            variable.set_variable_name(self_value.arg + "." + instruction.arg)
+                            variable.set_argument(call_function)
+
+                            # Add the variable at instructions of file object
+                            function_object.add_instruction(variable)
+                        # Variable -> CallFunction STORE_FAST STORE_ATTR
+                        elif previous_instructions[1].name == "CALL_FUNCTION":
+                            previous_instructions.append(by[i - 2])
+                            previous_instructions.append(by[i - 3])
+                            previous_instructions.append(by[i - 4])
+                            previous_instructions.append(by[i - 5])
+                            previous_instructions.append(by[i - 6])
+                            previous_instructions.reverse()
+                            if isinstance(previous_instructions[1].arg, str):
+                                previous_instruction = list()
+                                count = i - 1
+                                previous_instruction.append(instruction)
+                                while by[count].name != "POP_TOP" and by[count].name != "NOP" and by[
+                                    count].name != "STORE_FAST" and by[count].name != "STORE_ATTR":
+                                    previous_instruction.append(by[count])
+                                    count = count - 1
+
+                                # Create a call function object
+                                call_function = CallFunctionObject()
+
+                                call_function_reader = CallFunctionReader()
+                                call_function_reader.read_call_function(call_function, previous_instruction,
+                                                                        debug_active)
+
+                                # Create a variable object
+                                variable = VariableObject()
+                                variable.set_variable_name(
+                                    previous_instruction[1].arg + "." + previous_instruction[0].arg)
+                                variable.set_argument(call_function)
+
+                                # Add the call function at instructions of file object
+                                function_object.add_instruction(variable)
+
+                                i = i + 1
+                                continue
+                        else:
+                            print("Not registered")
+                            print(instruction)
+                            print(previous_instructions[0])
+                            print(previous_instructions[1])
+                    else:
+                        print("Not registered")
+                        print(instruction)
+                        print(previous_instructions[0])
+
+                case "STORE_FAST":
+                    previous_instructions = [by[i - 1]]
+                    # Variable -> LOAD_CONST STORE_FAST
+                    if previous_instructions[0].name == "LOAD_CONST":
+                        # Create a variable object
+                        variable = VariableObject()
+                        variable.set_variable_name(instruction.arg)
+                        variable.set_argument(
+                            str(type(previous_instructions[0].arg).__name__) + ":" + str(previous_instructions[0].arg))
+                        # Add variabile at variable list of class
+                        function_object.add_variable(variable)
+                    # Variable -> LOAD_FAST STORE_FAST
+                    elif previous_instructions[0].name == "LOAD_FAST":
+                        # Create the Variable Object
+                        other_variable = VariableObject()
+                        other_variable.set_variable_name(previous_instructions[0].arg)
+                        # Create the 2* Variable Object
+                        variable = VariableObject()
+                        variable.set_variable_name(instruction.arg)
+                        # Set the 1* Variable Object at 2* Variable Object
+                        variable.set_argument(other_variable)
+                        # Add the variable at instructions
+                        function_object.add_instruction(variable)
+                    # Variable -> BUILD_LIST LOAD_CONST LIST_EXTEND STORE_FAST
+                    elif previous_instructions[0].name == "LIST_EXTEND":
+                        previous_instructions.append(by[i - 2])
+                        previous_instructions.append(by[i - 3])
+                        previous_instructions.reverse()
+                        # Create a variable object
+                        variable = VariableObject()
+                        # The current instruction contains the name of variable
+                        variable.set_variable_name(instruction.arg)
+                        variable.set_argument(
+                            str(type(previous_instructions[1].arg).__name__) + ":" + str(previous_instructions[1].arg))
+                        # Add the variable at variables list:
+                        function_object.add_variable(variable)
+                    # Variable -> LOAD_CONST LOAD_CONST BUILD_MAP STORE_FAST
+                    elif previous_instructions[0].name == "BUILD_MAP":
+                        previous_instructions.append(by[i - 2])
+                        previous_instructions.append(by[i - 3])
+                        previous_instructions.reverse()
+                        # Create a variable object
+                        variable = VariableObject()
+                        # The current instruction contains the name of variable
+                        variable.set_variable_name(instruction.arg)
+                        variable.set_argument(previous_instructions[0].arg + ":" + previous_instructions[1].arg)
+
+                        # Add the variable at variables list:
+                        function_object.add_variable(variable)
+                    # Variable -> BUILD_SET LOAD_CONST SET_UPDATE STORE_FAST
+                    elif previous_instructions[0].name == "SET_UPDATE":
+                        previous_instructions.append(by[i - 2])
+                        previous_instructions.append(by[i - 3])
+                        previous_instructions.reverse()
+                        # Create a variable object
+                        variable = VariableObject()
+                        # The current instruction contains the name of variable
+                        variable.set_variable_name(instruction.arg)
+                        variable.set_argument(
+                            str(type(previous_instructions[1].arg).__name__) + ":" + str(previous_instructions[1].arg))
+                        # Add the variable at variables list:
+                        function_object.add_variable(variable)
+                    # Import -> LOAD_CONST LOAD_CONST IMPORT_NAME STORE_FAST
+                    elif previous_instructions[0].name == "IMPORT_NAME":
+                        previous_instructions.append(by[i - 2])
+                        previous_instructions.append(by[i - 3])
+                        previous_instructions.reverse()
+                        # Create an import Object
+                        import_object = ImportObject()
+                        import_object.add_string(instruction.arg)
+
+                        # Add the import at import list
+                        function_object.add_import(import_object)
+                    # Import -> LOAD_CONST LOAD_CONST IMPORT_NAME IMPORT_FROM STORE_FAST
+                    elif previous_instructions[0].name == "IMPORT_FROM":
+                        previous_instructions.append(by[i - 2])
+                        previous_instructions.append(by[i - 3])
+                        previous_instructions.append(by[i - 4])
+                        previous_instructions.reverse()
+                        # Create an import Object
+                        import_object = ImportObject()
+                        import_object.add_string(previous_instructions[1].arg)
+                        import_object.set_from_name(previous_instructions[2].arg)
+
+                        # Add the import at import list
+                        function_object.add_import(import_object)
+                    # Variable -> CallMethod STORE_FAST
+                    elif previous_instructions[0].name == "CALL_METHOD":
+                        previous_instruction = list()
+                        count = i - 1
+                        previous_instruction.append(instruction)
+                        while by[count].name != "POP_TOP" and by[count].name != "NOP" and by[
+                            count].name != "STORE_FAST":
+                            previous_instruction.append(by[count])
+                            count = count - 1
+
+                        if by[i + 1].name == "CALL_FUNCTION":
+                            i = i + 1
+                            continue
+                        elif by[i + 1].name == "LOAD_METHOD":
+                            i = i + 1
                             continue
 
-                        # Construct the path at method call
-                        while len(next_instructions) != 0:
-                            if len(next_instructions) == 1:
-                                call_function.set_method_name(next_instructions[0].arg)
-                            else:
-                                call_function_path = call_function_path + next_instructions[0].arg + "."
-                            next_instructions.pop(0)
-                        call_function.set_path(call_function_path)
+                        # Create a call function object
+                        call_function = CallFunctionObject()
 
-                        function_object.set_return_value(call_function)
-                        i = i + 2
+                        call_function_reader = CallFunctionReader()
+                        call_function_reader.read_call_function(call_function, previous_instruction, debug_active)
+
+                        # Create a variable object
+                        variable = VariableObject()
+
+                        variable.set_variable_name(instruction.arg)
+                        variable.set_argument(call_function)
+
+                        # Add the variable at instructions of file object
+                        function_object.add_instruction(variable)
+                    # Variable -> CallFunction STORE_FAST
+                    elif previous_instructions[0].name == "CALL_FUNCTION":
+                        previous_instructions.append(by[i - 2])
+                        previous_instructions.append(by[i - 3])
+                        previous_instructions.append(by[i - 4])
+                        previous_instructions.append(by[i - 5])
+                        previous_instructions.append(by[i - 6])
+                        previous_instructions.reverse()
+                        if isinstance(previous_instructions[0].arg, str):
+                            previous_instruction = list()
+                            count = i - 1
+                            previous_instruction.append(instruction)
+                            while by[count].name != "POP_TOP" and by[count].name != "NOP" and by[
+                                count].name != "STORE_FAST" and by[count].name != "STORE_ATTR":
+                                previous_instruction.append(by[count])
+                                count = count - 1
+
+                            # Create a call function object
+                            call_function = CallFunctionObject()
+
+                            call_function_reader = CallFunctionReader()
+                            call_function_reader.read_call_function(call_function, previous_instruction,
+                                                                    debug_active)
+
+                            # Create a variable object
+                            variable = VariableObject()
+                            variable.set_variable_name(previous_instruction[0].arg)
+                            variable.set_argument(call_function)
+
+                            # Add the call function at instructions of file object
+                            function_object.add_instruction(variable)
+
+                            i = i + 1
+                            continue
+                    else:
+                        print("Not registered")
+                        print(instruction)
+                        print(previous_instructions[0])
             i = i + 1
 
         if debug_active == 1:
-            print(function_object.function_name + " End Function Reading\n")
+            print("\n" + function_object.function_name + " End Function Reading...")
