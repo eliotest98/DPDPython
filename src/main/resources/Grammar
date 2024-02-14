@@ -8,7 +8,11 @@ ClassList -> Class ClassList |
              Class           |
              /* empty */
 
-Class -> LOAD_BUILD_CLASS LOAD_CONST(BodyClass) LOAD_CONST MAKE_FUNCTION LOAD_CONST CALL_FUNCTION STORE_NAME
+Class -> LOAD_BUILD_CLASS LOAD_CONST(BodyClass) LOAD_CONST MAKE_FUNCTION LOAD_CONST SuperclassList CALL_FUNCTION STORE_NAME
+
+SuperclassList -> LOAD_NAME SuperclassList |
+                  LOAD_NAME                |
+                  /* empty */
 
 BodyClass -> LOAD_NAME STORE_NAME LOAD_CONST STORE_NAME ImportList VariableList Constructor(Function) FunctionList InstructionList ReturnValue
 

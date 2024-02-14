@@ -221,6 +221,6 @@ class CallFunctionReader:
                         pass
 
                 case "LOAD_CONST":
-                    call_function_object.add_parameter(instruction.arg)
+                    call_function_object.add_parameter(str(type(instruction.arg).__name__) + ":" + str(instruction.arg))
 
             i = i + 1

@@ -22,6 +22,9 @@ class VariableObject:
         else:
             self.argument = argument
 
+    def get_argument(self):
+        return self.argument
+
     def abstract_syntax_tree(self):
         string_to_return = "<VARIABLE> (id," + self.variable_name + ")\n"
         if self.argument != "":

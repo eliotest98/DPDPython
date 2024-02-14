@@ -70,7 +70,8 @@ class FileReader:
                     previous_instruction = list()
                     count = i - 1
                     previous_instruction.append(instruction)
-                    while by[count].name != "POP_TOP" and by[count].name != "NOP" and by[count].name != "STORE_NAME":
+                    while by[count].name != "POP_TOP" and by[count].name != "NOP" and by[count].name != "STORE_NAME" \
+                            and by[count].name != "LOAD_BUILD_CLASS":
                         previous_instruction.append(by[count])
                         count = count - 1
 
@@ -101,26 +102,16 @@ class FileReader:
                     # Class -> LOAD_BUILD_CLASS LOAD_CONST(BodyClass) LOAD_CONST
                     # MAKE_FUNCTION LOAD_CONST CALL_FUNCTION STORE_NAME
                     if previous_instruction[0].name == "CALL_FUNCTION":
-                        previous_instruction.append(by[i - 2])
-                        previous_instruction.append(by[i - 3])
-                        previous_instruction.append(by[i - 4])
-                        previous_instruction.append(by[i - 5])
-                        previous_instruction.append(by[i - 6])
-                        previous_instruction.reverse()
+                        previous_instruction = list()
+                        count = i - 1
+                        while by[count].name != "POP_TOP" and by[count].name != "NOP" and by[
+                            count].name != "STORE_NAME" and by[count].name != "LOAD_BUILD_CLASS":
+                            previous_instruction.append(by[count])
+                            count = count - 1
+                        previous_instruction.append(by[count])
 
-                        # Create a class object
-                        class_object = ClassObject()
-                        class_object.set_class_name(instruction.arg)
-
-                        if isinstance(previous_instruction[1].arg, str):
-                            previous_instruction = list()
-                            count = i - 1
-                            previous_instruction.append(instruction)
-                            while by[count].name != "POP_TOP" and by[count].name != "NOP" and by[
-                                count].name != "STORE_NAME":
-                                previous_instruction.append(by[count])
-                                count = count - 1
-
+                        # In this case is a function
+                        if isinstance(previous_instruction[len(previous_instruction) - 2].arg, str):
                             # Create a call function object
                             call_function = CallFunctionObject()
 
@@ -138,8 +129,22 @@ class FileReader:
                             i = i + 1
                             continue
 
+                        # Create a class object
+                        class_object = ClassObject()
+                        class_object.set_class_name(instruction.arg)
+
+                        # SuperclassList -> LOAD_NAME -> SuperclassList |
+                        #                   LOAD_NAME                   |
+                        #                   /* empty */
+                        for instruction_part in previous_instruction:
+                            if instruction_part.name == "LOAD_NAME":
+                                class_object.add_superclass(instruction_part.arg)
+                            elif instruction_part.name == "LOAD_CONST" and instruction_part.arg == instruction.arg:
+                                break
+
                         # Get the bytecode of internal function
-                        new_byte = bytecode.Bytecode.from_code(previous_instruction[1].arg)
+                        new_byte = bytecode.Bytecode.from_code(previous_instruction[len(previous_instruction) - 2].arg)
+
                         # Start a class reader for read the body of class
                         class_reader = ClassReader()
                         class_reader.read_class(class_object, new_byte, debug_active)
@@ -208,7 +213,8 @@ class FileReader:
                         variable = VariableObject()
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(previous_instruction[1].arg)
+                        variable.set_argument(
+                            str(type(previous_instruction[1].arg).__name__) + ":" + str(previous_instruction[1].arg))
                         # Add the variable at variables list:
                         file_object.add_variable(variable)
                     # Variable -> LOAD_CONST LOAD_CONST BUILD_MAP STORE_NAME
@@ -232,7 +238,8 @@ class FileReader:
                         variable = VariableObject()
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(previous_instruction[1].arg)
+                        variable.set_argument(
+                            str(type(previous_instruction[1].arg).__name__) + ":" + str(previous_instruction[1].arg))
                         # Add the variable at variables list:
                         file_object.add_variable(variable)
                     # Variable -> LOAD_CONST STORE_NAME
@@ -240,7 +247,8 @@ class FileReader:
                         variable = VariableObject()
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(previous_instruction[0].arg)
+                        variable.set_argument(
+                            str(type(previous_instruction[0].arg).__name__) + ":" + str(previous_instruction[0].arg))
                         # Add the variable at variables list:
                         file_object.add_variable(variable)
                     # Function -> LOAD_CONST(InstructionList) LOAD_CONST MAKE_FUNCTION STORE_NAME |

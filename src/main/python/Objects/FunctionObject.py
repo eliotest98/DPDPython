@@ -5,11 +5,11 @@ from Objects.VariableObject import VariableObject
 # This class represent the function instance
 # A function is formed from:
 # - a name
-# - parameters (optionals)
-# - variables (optionals)
-# - imports (optionals)
+# - parameters
+# - variables
+# - imports
 # - instructions
-# - return value (optionals)
+# - return value
 class FunctionObject:
     function_name = ""
     parameters_list = list()
@@ -29,6 +29,9 @@ class FunctionObject:
     def set_function_name(self, function_name):
         self.function_name = function_name
 
+    def get_function_name(self):
+        return self.function_name
+
     def add_parameter(self, parameter_name):
         self.parameters_list.append(parameter_name)
 
@@ -38,11 +41,17 @@ class FunctionObject:
     def add_instruction(self, instruction):
         self.instruction_list.append(instruction)
 
+    def get_instructions_list(self):
+        return self.instruction_list
+
     def set_return_value(self, return_value_object):
         if return_value_object is None:
             self.return_value = "None"
         else:
             self.return_value = return_value_object
+
+    def get_return_value(self):
+        return self.return_value
 
     def add_import(self, import_object):
         self.import_list.append(import_object)

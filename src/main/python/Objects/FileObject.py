@@ -5,13 +5,11 @@ from Objects.FunctionObject import FunctionObject
 # A class is formed from:
 # - a name
 # - a list of imports
-# - other classes with "class" key (optionals)
-# - a constructor with "__init__" key (optionals)
-# - some functions with "def" key (optionals)
-# - variables (optionals)
-# - instructions:
-#   - call methods
-
+# - other classes with "class" key
+# - a constructor with "__init__" key
+# - some functions with "def" key
+# - variables
+# - instructions
 class FileObject:
     class_name = ""
     class_list = list()
@@ -33,8 +31,14 @@ class FileObject:
     def set_class_name(self, class_name):
         self.class_name = class_name
 
+    def get_class_name(self):
+        return self.class_name
+
     def add_class(self, class_object):
         self.class_list.append(class_object)
+
+    def get_class_list(self):
+        return self.class_list
 
     def add_function(self, function_object):
         self.functions_list.append(function_object)

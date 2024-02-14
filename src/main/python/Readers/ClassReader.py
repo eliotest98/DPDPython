@@ -103,8 +103,8 @@ class ClassReader:
                         # Create a variable object
                         variable = VariableObject()
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(previous_instructions[0].arg)
-
+                        variable.set_argument(
+                            str(type(previous_instructions[0].arg).__name__) + ":" + str(previous_instructions[0].arg))
                         # Add variabile at variable list of class
                         class_object.add_variable(variable)
                     # Variable -> LOAD_NAME STORE_NAME
@@ -128,8 +128,8 @@ class ClassReader:
                         variable = VariableObject()
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(previous_instructions[1].arg)
-
+                        variable.set_argument(
+                            str(type(previous_instructions[1].arg).__name__) + ":" + str(previous_instructions[1].arg))
                         # Add the variable at variables list:
                         class_object.add_variable(variable)
                     # Variable -> LOAD_CONST LOAD_CONST BUILD_MAP STORE_NAME
@@ -154,8 +154,8 @@ class ClassReader:
                         variable = VariableObject()
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(previous_instructions[1].arg)
-
+                        variable.set_argument(
+                            str(type(previous_instructions[1].arg).__name__) + ":" + str(previous_instructions[1].arg))
                         # Add the variable at variables list:
                         class_object.add_variable(variable)
                     # Variable -> CallMethod STORE_NAME

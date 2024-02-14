@@ -33,29 +33,8 @@ class FunctionReader:
 
                     # ReturnValue -> LOAD_CONST RETURN_VALUE
                     if previous_instructions[0].name == "LOAD_CONST":
-                        return_type = function_object.return_value
-                        if return_type == "":
-                            if isinstance(previous_instructions[0].arg, int):
-                                function_object.set_return_value("int:" + str(previous_instructions[0].arg))
-                            elif isinstance(previous_instructions[0].arg, str):
-                                function_object.set_return_value("\"" + previous_instructions[0].arg + "\"")
-                            elif previous_instructions[0].arg is None:
-                                function_object.set_return_value("None")
-                            else:
-                                print("Not registered")
-                                print(instruction)
-                                print(previous_instructions[0])
-                        else:
-                            if return_type.__contains__("str"):
-                                function_object.set_return_value("\"" + previous_instructions[0].arg + "\"")
-                            elif return_type.__contains__("int"):
-                                function_object.set_return_value("int:" + str(previous_instructions[0].arg))
-                            elif previous_instructions[0].arg is None:
-                                function_object.set_return_value("None")
-                            else:
-                                print("Not registered")
-                                print(instruction)
-                                print(previous_instructions[0])
+                        function_object.set_return_value(
+                            str(type(previous_instructions[0].arg).__name__) + ":" + str(previous_instructions[0].arg))
                     # ReturnValue -> LOAD_FAST RETURN_VALUE
                     elif previous_instructions[0].name == "LOAD_FAST":
                         # Create a Variable Object
@@ -130,6 +109,9 @@ class FunctionReader:
                     elif by[i + 1].name == "LOAD_CONST":
                         i = i + 1
                         continue
+                    elif by[i + 1].name == "RETURN_VALUE":
+                        i = i + 1
+                        continue
 
                     # Create a call function object
                     call_function = CallFunctionObject()
@@ -181,8 +163,9 @@ class FunctionReader:
                             # Create a variable object
                             variable = VariableObject()
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
-                            variable.set_argument(previous_instructions[1].arg)
-
+                            variable.set_argument(
+                                str(type(previous_instructions[1].arg).__name__) + ":" + str(
+                                    previous_instructions[1].arg))
                             # Add variabile at variable list of class
                             function_object.add_variable(variable)
                         # Variable -> LOAD_FAST STORE_FAST STORE_ATTR
@@ -206,8 +189,9 @@ class FunctionReader:
                             variable = VariableObject()
                             # The current instruction contains the name of variable
                             variable.set_variable_name(previous_instructions[3].arg + "." + instruction.arg)
-                            variable.set_argument(previous_instructions[1].arg)
-
+                            variable.set_argument(
+                                str(type(previous_instructions[1].arg).__name__) + ":" + str(
+                                    previous_instructions[1].arg))
                             # Add the variable at variables list:
                             function_object.add_variable(variable)
                         # Variable -> LOAD_CONST LOAD_CONST BUILD_MAP STORE_FAST STORE_ATTR
@@ -232,8 +216,9 @@ class FunctionReader:
                             variable = VariableObject()
                             # The current instruction contains the name of variable
                             variable.set_variable_name(previous_instructions[3].arg + "." + instruction.arg)
-                            variable.set_argument(previous_instructions[1].arg)
-
+                            variable.set_argument(
+                                str(type(previous_instructions[1].arg).__name__) + ":" + str(
+                                    previous_instructions[1].arg))
                             # Add the variable at variables list:
                             function_object.add_variable(variable)
                         # Variable -> CallMethod STORE_FAST STORE_ATTR
@@ -321,8 +306,8 @@ class FunctionReader:
                         # Create a variable object
                         variable = VariableObject()
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(previous_instructions[0].arg)
-
+                        variable.set_argument(
+                            str(type(previous_instructions[0].arg).__name__) + ":" + str(previous_instructions[0].arg))
                         # Add variabile at variable list of class
                         function_object.add_variable(variable)
                     # Variable -> LOAD_FAST STORE_FAST
@@ -346,8 +331,8 @@ class FunctionReader:
                         variable = VariableObject()
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(previous_instructions[1].arg)
-
+                        variable.set_argument(
+                            str(type(previous_instructions[1].arg).__name__) + ":" + str(previous_instructions[1].arg))
                         # Add the variable at variables list:
                         function_object.add_variable(variable)
                     # Variable -> LOAD_CONST LOAD_CONST BUILD_MAP STORE_FAST
@@ -372,8 +357,8 @@ class FunctionReader:
                         variable = VariableObject()
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(previous_instructions[1].arg)
-
+                        variable.set_argument(
+                            str(type(previous_instructions[1].arg).__name__) + ":" + str(previous_instructions[1].arg))
                         # Add the variable at variables list:
                         function_object.add_variable(variable)
                     # Import -> LOAD_CONST LOAD_CONST IMPORT_NAME STORE_FAST

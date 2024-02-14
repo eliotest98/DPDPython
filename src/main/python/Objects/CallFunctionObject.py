@@ -3,7 +3,6 @@
 # - a path to method
 # - a name method
 # - a list of parameters
-
 class CallFunctionObject:
     path = ""
     method_name = ""
@@ -30,6 +29,9 @@ class CallFunctionObject:
 
     def set_method_name(self, method_name):
         self.method_name = method_name
+
+    def get_method_name(self):
+        return self.method_name
 
     def abstract_syntax_tree(self):
         string_to_return = ""

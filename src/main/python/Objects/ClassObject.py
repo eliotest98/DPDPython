@@ -4,6 +4,7 @@ from Objects.FunctionObject import FunctionObject
 # This class represent the class instance
 # A class is formed from:
 # - a name
+# - a list of superclass
 # - a list of imports
 # - a constructor with "__init__" key
 # - some functions with "def" key
@@ -11,6 +12,7 @@ from Objects.FunctionObject import FunctionObject
 # - instructions
 class ClassObject:
     class_name = ""
+    superclass_list = list()
     import_list = list()
     functions_list = list()
     constructor = FunctionObject()
@@ -24,12 +26,19 @@ class ClassObject:
         self.variables_list = list()
         self.import_list = list()
         self.instructions_list = list()
+        self.superclass_list = list()
 
     def set_class_name(self, class_name):
         self.class_name = class_name
 
+    def get_class_name(self):
+        return self.class_name
+
     def add_function(self, function_object):
         self.functions_list.append(function_object)
+
+    def get_functions_list(self):
+        return self.functions_list
 
     def set_constructor(self, function_object):
         self.constructor = function_object
@@ -43,8 +52,16 @@ class ClassObject:
     def add_instruction(self, instruction):
         self.instructions_list.append(instruction)
 
+    def add_superclass(self, superclass_name):
+        self.superclass_list.append(superclass_name)
+
     def abstract_syntax_tree(self):
         string_to_return = "<CLASS> (id," + self.class_name + ")\n"
+        if len(self.superclass_list) != 0:
+            string_to_return = string_to_return + "<SUPERCLASS_LIST>\n"
+            for superclass in self.superclass_list:
+                string_to_return = string_to_return + "<SUPERCLASS>" + superclass + "</SUPERCLASS>\n"
+            string_to_return = string_to_return + "</SUPERCLASS_LIST>\n"
         if len(self.import_list) != 0:
             string_to_return = string_to_return + "<IMPORT_LIST>\n"
             for import_ in self.import_list:
