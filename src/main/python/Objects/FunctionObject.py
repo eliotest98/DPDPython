@@ -1,4 +1,5 @@
 from Objects.CallFunctionObject import CallFunctionObject
+from Objects.ReturnObject import ReturnObject
 from Objects.VariableObject import VariableObject
 
 
@@ -16,7 +17,7 @@ class FunctionObject:
     variables_list = list()
     import_list = list()
     instruction_list = list()
-    return_value = ""
+    return_object = ReturnObject()
 
     def __init__(self):
         self.function_name = ""
@@ -24,7 +25,7 @@ class FunctionObject:
         self.variables_list = list()
         self.instruction_list = list()
         self.import_list = list()
-        self.return_value = ""
+        self.return_object = ReturnObject()
 
     def set_function_name(self, function_name):
         self.function_name = function_name
@@ -44,14 +45,11 @@ class FunctionObject:
     def get_instructions_list(self):
         return self.instruction_list
 
-    def set_return_value(self, return_value_object):
-        if return_value_object is None:
-            self.return_value = "None"
-        else:
-            self.return_value = return_value_object
+    def set_return_object(self, return_object):
+        self.return_object = return_object
 
-    def get_return_value(self):
-        return self.return_value
+    def get_return_object(self):
+        return self.return_object
 
     def add_import(self, import_object):
         self.import_list.append(import_object)
@@ -81,13 +79,6 @@ class FunctionObject:
                 else:
                     string_to_return = string_to_return + instruction.abstract_syntax_tree() + "\n"
             string_to_return = string_to_return + "</INSTRUCTION_LIST>\n"
-        if isinstance(self.return_value, (VariableObject, CallFunctionObject)):
-            string_to_return = string_to_return + "<RETURN>"
-            string_to_return = string_to_return + self.return_value.abstract_syntax_tree() + "\n"
-            string_to_return = string_to_return + "</RETURN>"
-        else:
-            string_to_return = string_to_return + "<RETURN>"
-            string_to_return = string_to_return + str(self.return_value)
-            string_to_return = string_to_return + "</RETURN>"
+        string_to_return = string_to_return + self.return_object.abstract_syntax_tree() + "\n"
         string_to_return = string_to_return + "</FUNCTION_DECLARATION>"
         return string_to_return

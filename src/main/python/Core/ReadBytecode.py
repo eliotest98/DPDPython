@@ -68,12 +68,12 @@ class ReadBytecode:
             print(file_name + " File Reading...")
 
         # Start the visitor
-        file_reader = FileReader(file_directory)
+        file_reader = FileReader(file_directory, self.system_object)
         file_object = FileObject()
         file_object.set_class_name(file_name.replace(".py", ""))
         file_reader.read_file(file_object, by, self.debug_active)
 
-        self.system_object.add_class(file_object, os.path.dirname(file_directory))
+        self.system_object.add_class(file_object)
 
         if self.debug_active == 1:
             print(file_name + " End File Reading...")

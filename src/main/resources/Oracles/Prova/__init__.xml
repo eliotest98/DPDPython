@@ -1,14 +1,19 @@
-<CLASS>(id,__init__)
-    <IMPORT_LIST>
-        <FROM>(id,Oracle.Adapter.AdapterPattern)
-            <IMPORT>(id,('Adaptee',))</IMPORT>
-        </FROM>
-    </IMPORT_LIST>
-    <CLASS_LIST>
-        <CLASS>(id,Class)
-            <SUPERCLASS_LIST>
-                <SUPERCLASS>Adaptee</SUPERCLASS>
-            </SUPERCLASS_LIST>
-        </CLASS>
-    </CLASS_LIST>
-</CLASS>
+<FILE>(id,__init__)
+    <FUNCTION_LIST>
+        <FUNCTION_DECLARATION>(id,pippo)
+            <VARIABLE_LIST>
+                <VARIABLE>(id,x)
+                    <TYPE>int</TYPE>
+                    <ARGUMENT>(10)</ARGUMENT>
+                </VARIABLE>
+            </VARIABLE_LIST>
+            <RETURN>
+                <TYPE>variable</TYPE>
+                <ARGUMENT>
+                    <VARIABLE>(id,x)
+                    </VARIABLE>
+                </ARGUMENT>
+            </RETURN>
+        </FUNCTION_DECLARATION>
+    </FUNCTION_LIST>
+</FILE>

@@ -1,7 +1,7 @@
-from Descriptors.MatrixContainer import MatrixContainer
+from Core.SystemGenerator.Objects.MatrixContainer import MatrixContainer
 
 
-class AdapterPatternDescriptor:
+class AdapterPatternDescriptor(MatrixContainer):
     number_of_hierarchies = 0
     divisor_array = []
     method_role_name = ""
@@ -9,6 +9,7 @@ class AdapterPatternDescriptor:
     matrix_container = MatrixContainer()
 
     def __init__(self):
+        super().__init__()
         self.number_of_hierarchies = 0
         self.divisor_array = []
         self.method_role_name = ""

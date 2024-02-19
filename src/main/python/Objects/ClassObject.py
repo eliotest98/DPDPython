@@ -3,6 +3,7 @@ from Objects.FunctionObject import FunctionObject
 
 # This class represent the class instance
 # A class is formed from:
+# - the name of file where the class is created
 # - a name
 # - a list of superclass
 # - a list of imports
@@ -12,6 +13,7 @@ from Objects.FunctionObject import FunctionObject
 # - instructions
 class ClassObject:
     class_name = ""
+    file_name = ""
     superclass_list = list()
     import_list = list()
     functions_list = list()
@@ -21,6 +23,7 @@ class ClassObject:
 
     def __init__(self):
         self.class_name = ""
+        self.file_name = ""
         self.functions_list = list()
         self.constructor = FunctionObject()
         self.variables_list = list()
@@ -46,6 +49,9 @@ class ClassObject:
     def add_variable(self, variable_object):
         self.variables_list.append(variable_object)
 
+    def get_variables_list(self):
+        return self.variables_list
+
     def add_import(self, import_object):
         self.import_list.append(import_object)
 
@@ -54,6 +60,15 @@ class ClassObject:
 
     def add_superclass(self, superclass_name):
         self.superclass_list.append(superclass_name)
+
+    def get_superclass_list(self):
+        return self.superclass_list
+
+    def set_file_name(self, file_name):
+        self.file_name = file_name
+
+    def get_file_name(self):
+        return self.file_name
 
     def abstract_syntax_tree(self):
         string_to_return = "<CLASS> (id," + self.class_name + ")\n"

@@ -1,3 +1,4 @@
+from Objects.ClassObject import ClassObject
 from Objects.FunctionObject import FunctionObject
 
 
@@ -10,22 +11,23 @@ from Objects.FunctionObject import FunctionObject
 # - some functions with "def" key
 # - variables
 # - instructions
-class FileObject:
+class FileObject(ClassObject):
     class_name = ""
     class_list = list()
     functions_list = list()
     constructor = FunctionObject()
     variables_list = list()
-    instructions = list()
+    instructions_list = list()
     import_list = list()
 
     def __init__(self):
+        super().__init__()
         self.class_name = ""
         self.class_list = list()
         self.functions_list = list()
         self.constructor = FunctionObject()
         self.variables_list = list()
-        self.instructions = list()
+        self.instructions_list = list()
         self.import_list = list()
 
     def set_class_name(self, class_name):
@@ -50,13 +52,13 @@ class FileObject:
         self.variables_list.append(variable_object)
 
     def add_instruction(self, call_function_object):
-        self.instructions.append(call_function_object)
+        self.instructions_list.append(call_function_object)
 
     def add_import(self, import_object):
         self.import_list.append(import_object)
 
     def abstract_syntax_tree(self):
-        string_to_return = "<CLASS> (id," + self.class_name + ")\n"
+        string_to_return = "<FILE> (id," + self.class_name + ")\n"
         if len(self.import_list) != 0:
             string_to_return = string_to_return + "<IMPORT_LIST>\n"
             for import_ in self.import_list:
@@ -81,13 +83,13 @@ class FileObject:
             for clas in self.class_list:
                 string_to_return = string_to_return + clas.abstract_syntax_tree() + "\n"
             string_to_return = string_to_return + "</CLASS_LIST>\n"
-        if len(self.instructions) != 0:
+        if len(self.instructions_list) != 0:
             string_to_return = string_to_return + "<INSTRUCTION_LIST>\n"
-            for instruction in self.instructions:
+            for instruction in self.instructions_list:
                 if isinstance(instruction, str):
                     string_to_return = string_to_return + instruction + "\n"
                 else:
                     string_to_return = string_to_return + instruction.abstract_syntax_tree() + "\n"
             string_to_return = string_to_return + "</INSTRUCTION_LIST>\n"
-        string_to_return = string_to_return + "</CLASS>"
+        string_to_return = string_to_return + "</FILE>\n"
         return string_to_return

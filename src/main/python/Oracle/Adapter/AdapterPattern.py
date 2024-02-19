@@ -6,6 +6,9 @@ class Adaptee:
 
 
 class Adapter:
+
+    adaptee = ""
+
     def __init__(self, adaptee):
         self.adaptee = adaptee
 
