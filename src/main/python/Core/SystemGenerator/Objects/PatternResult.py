@@ -1,6 +1,3 @@
-from Utils.DesignPattern import DesignPattern
-
-
 class PatternResult:
 
     pattern_name = ""

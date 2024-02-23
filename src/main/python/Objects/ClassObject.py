@@ -1,3 +1,4 @@
+from Objects.CallFunctionObject import CallFunctionObject
 from Objects.FunctionObject import FunctionObject
 
 
@@ -11,6 +12,9 @@ from Objects.FunctionObject import FunctionObject
 # - some functions with "def" key
 # - variables
 # - instructions
+from Objects.VariableObject import VariableObject
+
+
 class ClassObject:
     class_name = ""
     file_name = ""
@@ -49,6 +53,9 @@ class ClassObject:
     def add_variable(self, variable_object):
         self.variables_list.append(variable_object)
 
+    def remove_variable(self, variable_object):
+        self.variables_list.remove(variable_object)
+
     def get_variables_list(self):
         return self.variables_list
 
@@ -57,6 +64,9 @@ class ClassObject:
 
     def add_instruction(self, instruction):
         self.instructions_list.append(instruction)
+
+    def get_instructions_list(self):
+        return self.instructions_list
 
     def add_superclass(self, superclass_name):
         self.superclass_list.append(superclass_name)
@@ -70,39 +80,43 @@ class ClassObject:
     def get_file_name(self):
         return self.file_name
 
-    def abstract_syntax_tree(self):
-        string_to_return = "<CLASS> (id," + self.class_name + ")\n"
+    def abstract_syntax_tree(self, number_of_tabs):
+        string_tabs = (number_of_tabs + 1) * "\t"
+        internal_string_tabs = string_tabs + "\t"
+        string_to_return = string_tabs + "<CLASS>(id," + self.class_name + ")\n"
         if len(self.superclass_list) != 0:
-            string_to_return = string_to_return + "<SUPERCLASS_LIST>\n"
+            string_to_return = string_to_return + internal_string_tabs + "<SUPERCLASS_LIST>\n"
             for superclass in self.superclass_list:
-                string_to_return = string_to_return + "<SUPERCLASS>" + superclass + "</SUPERCLASS>\n"
-            string_to_return = string_to_return + "</SUPERCLASS_LIST>\n"
+                string_to_return = string_to_return + internal_string_tabs + "\t<SUPERCLASS>" + superclass + "</SUPERCLASS>\n"
+            string_to_return = string_to_return + internal_string_tabs + "</SUPERCLASS_LIST>\n"
         if len(self.import_list) != 0:
-            string_to_return = string_to_return + "<IMPORT_LIST>\n"
+            string_to_return = string_to_return + internal_string_tabs + "<IMPORT_LIST>\n"
             for import_ in self.import_list:
-                string_to_return = string_to_return + import_.abstract_syntax_tree() + "\n"
-            string_to_return = string_to_return + "</IMPORT_LIST>\n"
+                string_to_return = string_to_return + import_.abstract_syntax_tree(number_of_tabs + 2) + "\n"
+            string_to_return = string_to_return + internal_string_tabs + "</IMPORT_LIST>\n"
         if len(self.variables_list) != 0:
-            string_to_return = string_to_return + "<VARIABLE_LIST>\n"
+            string_to_return = string_to_return + internal_string_tabs + "<VARIABLE_LIST>\n"
             for variable in self.variables_list:
-                string_to_return = string_to_return + variable.abstract_syntax_tree() + "\n"
-            string_to_return = string_to_return + "</VARIABLE_LIST>\n"
+                string_to_return = string_to_return + variable.abstract_syntax_tree(number_of_tabs + 2) + "\n"
+            string_to_return = string_to_return + internal_string_tabs + "</VARIABLE_LIST>\n"
         if self.constructor.function_name != "":
-            string_to_return = string_to_return + "<CONSTRUCTOR_DECLARATION>\n"
-            string_to_return = string_to_return + self.constructor.abstract_syntax_tree() + "\n"
-            string_to_return = string_to_return + "</CONSTRUCTOR_DECLARATION>\n"
+            string_to_return = string_to_return + internal_string_tabs + "<CONSTRUCTOR_DECLARATION>\n"
+            string_to_return = string_to_return + self.constructor.abstract_syntax_tree(number_of_tabs + 2) + "\n"
+            string_to_return = string_to_return + internal_string_tabs + "</CONSTRUCTOR_DECLARATION>\n"
         if len(self.functions_list) != 0:
-            string_to_return = string_to_return + "<FUNCTION_LIST>\n"
+            string_to_return = string_to_return + internal_string_tabs + "<FUNCTION_LIST>\n"
             for function in self.functions_list:
-                string_to_return = string_to_return + function.abstract_syntax_tree() + "\n"
-            string_to_return = string_to_return + "</FUNCTION_LIST>\n"
+                string_to_return = string_to_return + function.abstract_syntax_tree(number_of_tabs + 2) + "\n"
+            string_to_return = string_to_return + internal_string_tabs + "</FUNCTION_LIST>\n"
         if len(self.instructions_list) != 0:
-            string_to_return = string_to_return + "<INSTRUCTION_LIST>\n"
+            string_to_return = string_to_return + internal_string_tabs + "<INSTRUCTION_LIST>\n"
             for instruction in self.instructions_list:
-                if isinstance(instruction, str):
-                    string_to_return = string_to_return + instruction + "\n"
+                if isinstance(instruction, CallFunctionObject):
+                    string_to_return = string_to_return + instruction.abstract_syntax_tree(number_of_tabs + 1) + "\n"
+                elif isinstance(instruction, VariableObject):
+                    string_to_return = string_to_return + instruction.abstract_syntax_tree(number_of_tabs + 2) + "\n"
                 else:
-                    string_to_return = string_to_return + instruction.abstract_syntax_tree() + "\n"
-            string_to_return = string_to_return + "</INSTRUCTION_LIST>\n"
-        string_to_return = string_to_return + "</CLASS>"
+                    string_to_return = string_to_return + instruction.abstract_syntax_tree(number_of_tabs + 1) + "\n"
+            string_to_return = string_to_return + internal_string_tabs + "</INSTRUCTION_LIST>\n"
+        string_to_return = string_to_return + string_tabs + "</CLASS>"
         return string_to_return

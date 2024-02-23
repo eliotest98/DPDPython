@@ -53,5 +53,5 @@ class SystemObject:
         return_string = ""
         for single_file in self.class_list:
             if isinstance(single_file, FileObject):
-                return_string = return_string + "<FILE_LIST>\n" + single_file.abstract_syntax_tree() + "</FILE_LIST>"
+                return_string = return_string + "<FILE_LIST>\n\t" + single_file.abstract_syntax_tree(1) + "</FILE_LIST>"
         return return_string

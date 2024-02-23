@@ -121,6 +121,9 @@ class FunctionReader:
                     elif by[i + 1].name == "RETURN_VALUE":
                         i = i + 1
                         continue
+                    elif by[i + 1].name == "STORE_FAST":
+                        i = i + 1
+                        continue
 
                     # Create a call function object
                     call_function = CallFunctionObject()

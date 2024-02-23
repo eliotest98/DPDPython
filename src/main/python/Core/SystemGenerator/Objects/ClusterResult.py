@@ -19,15 +19,18 @@ class ClusterResult:
         row_name_list = pattern_descriptor.get_class_name_list()
         column_name_list = system_container.get_class_name_list()
         for i in range(len(results)):
-            for j in range(len(results[i])):
-                entry = Entry(results[i][j], row_name_list[i], column_name_list[j], j)
+            for j in range(len(results.columns)):
+                value = results.iloc[i, j]
+                row_name = row_name_list[i]
+                column_name = column_name_list[j]
+                entry = Entry(value, row_name, column_name, j)
                 self.entry_set.add(entry)
 
     def get_pattern_instance_list(self):
         role_map = {}
 
         for entry in self.entry_set:
-            divisor = self.pattern_descriptor.get_divisor(entry.get_role())
+            divisor = self.pattern_descriptor.get_divisor_with_role_name(entry.get_role())
             threshold = (divisor - 1) / divisor
             if entry.get_score() > threshold:
                 if entry.get_role() in role_map:
@@ -159,10 +162,10 @@ class ClusterResult:
     # TODO da aggiungere tutte le matrici
     def relationship_score(self, e1, e2):
         score = 0
-        if self.pattern_descriptor.get_abstract_method_invocation_from_abstract_class_matrix() is not None:
-            matrix = self.system_container.get_abstract_method_invocation_from_abstract_class_matrix()
-            if matrix[e1.get_position()][e2.get_position()] == 1.0 or matrix[e2.get_position()][
-                e1.get_position()] == 1.0:
+        if self.pattern_descriptor.get_association_matrix() is not None:
+            matrix = self.system_container.get_association_matrix()
+            if matrix.iloc[e1.get_position(), e2.get_position()] == 1.0 or matrix.iloc[
+                e2.get_position(), e1.get_position()] == 1.0:
                 score += 1
         return score
 
@@ -170,10 +173,10 @@ class ClusterResult:
     def merge_behavioral_data(self, e1, e2):
         fields = set()
         methods = set()
-        if self.pattern_descriptor.get_iterative_similar_abstract_method_invocation_matrix() is not None:
-            iterative_similar_abstract_method_invocation_behavioral_data = self.system_container.get_iterative_similar_abstract_method_invocation_behavioral_data()
-            self.process_behavioral_data(iterative_similar_abstract_method_invocation_behavioral_data, e1, e2, fields,
-                                         methods)
+        # if self.pattern_descriptor.get_iterative_similar_abstract_method_invocation_matrix() is not None:
+        #    iterative_similar_abstract_method_invocation_behavioral_data = self.system_container.get_iterative_similar_abstract_method_invocation_behavioral_data()
+        #    self.process_behavioral_data(iterative_similar_abstract_method_invocation_behavioral_data, e1, e2, fields,
+        #                                 methods)
         return fields, methods
 
     def process_behavioral_data(self, behavioral_data, e1, e2, fields, methods):

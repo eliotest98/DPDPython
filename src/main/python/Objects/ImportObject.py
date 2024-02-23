@@ -21,16 +21,19 @@ class ImportObject:
     def add_string(self, string):
         self.string_list.append(string)
 
-    def abstract_syntax_tree(self):
+    def abstract_syntax_tree(self, number_of_tabs):
+        string_tabs = (number_of_tabs + 1) * "\t"
+        internal_string_tabs = string_tabs + "\t"
         string_to_return = ""
         if self.from_name != "":
-            string_to_return = string_to_return + "<FROM> (id," + self.from_name + ")\n"
+            string_to_return = string_to_return + string_tabs + "<FROM>(id," + self.from_name + ")\n"
             if len(self.string_list) != 0:
                 for string in self.string_list:
-                    string_to_return = string_to_return + "<IMPORT> (id," + str(string) + ") </IMPORT>\n"
-            string_to_return = string_to_return + "</FROM>"
+                    string_to_return = string_to_return + internal_string_tabs + "<IMPORT>(id," + str(
+                        string) + ")</IMPORT>\n"
+            string_to_return = string_to_return + string_tabs + "</FROM>"
         else:
             if len(self.string_list) != 0:
                 for string in self.string_list:
-                    string_to_return = string_to_return + "<IMPORT> (id," + string + ") </IMPORT>"
+                    string_to_return = string_to_return + string_tabs + "<IMPORT>(id," + string + ")</IMPORT>"
         return string_to_return

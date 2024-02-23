@@ -3,17 +3,20 @@
 # - a path to method
 # - a name method
 # - a list of parameters
+# - the origin class name who implement the function called
 class CallFunctionObject:
     path = ""
     method_name = ""
     parameters_list = list()
     concatenation_calls = list()
+    origin_class_name = ""
 
     def __init__(self):
         self.path = ""
         self.method_name = ""
         self.parameters_list = list()
         self.concatenation_calls = list()
+        self.origin_class_name = ""
 
     def set_path(self, path):
         self.path = path
@@ -24,6 +27,9 @@ class CallFunctionObject:
         else:
             self.parameters_list.append(parameter)
 
+    def get_parameters_list(self):
+        return self.parameters_list
+
     def add_concat(self, call_function_object):
         self.concatenation_calls.append(call_function_object)
 
@@ -33,40 +39,54 @@ class CallFunctionObject:
     def get_method_name(self):
         return self.method_name
 
-    def abstract_syntax_tree(self):
+    def set_original_class_name(self, origin_class_name):
+        self.origin_class_name = origin_class_name
+
+    def get_original_class_name(self):
+        return self.origin_class_name
+
+    def abstract_syntax_tree(self, number_of_tabs):
+        string_tabs = (number_of_tabs + 2) * "\t"
+        internal_string_tabs = string_tabs + "\t"
         string_to_return = ""
         if len(self.concatenation_calls) != 0:
-            string_to_return = "<CONCATENATE_FUNCTION>"
+            string_to_return = string_tabs + "<CONCATENATE_FUNCTION>"
             for call in self.concatenation_calls:
-                string_to_return = string_to_return + call.abstract_syntax_tree()
-            string_to_return = string_to_return + "<CALL_FUNCTION> (id,\n"
+                string_to_return = string_to_return + "\n" + call.abstract_syntax_tree(number_of_tabs + 1)
+            string_to_return = string_to_return + internal_string_tabs + "\n" + internal_string_tabs + "<CALL_FUNCTION> (id,\n"
             if self.path != "":
                 string_to_return = string_to_return + self.path + str(self.method_name) + "("
             else:
-                string_to_return = string_to_return + str(self.method_name) + "("
+                string_to_return = string_to_return + internal_string_tabs + "\t" + str(self.method_name) + "("
             if len(self.parameters_list) != 0:
                 self.parameters_list.reverse()
                 for param in self.parameters_list:
                     if isinstance(param, (str, int, tuple)):
                         string_to_return = string_to_return + str(param) + ","
                     else:
-                        string_to_return = string_to_return + param.abstract_syntax_tree() + ","
+                        string_to_return = string_to_return + "\n" + param.abstract_syntax_tree(
+                            number_of_tabs + 2) + ","
                 string_to_return = string_to_return.removesuffix(",")
-            string_to_return = string_to_return + ")</CALL_FUNCTION>"
-            string_to_return = string_to_return + "</CONCATENATE_FUNCTION>"
+            string_to_return = string_to_return + ")\n" + internal_string_tabs + "</CALL_FUNCTION>\n"
+            string_to_return = string_to_return + string_tabs + "</CONCATENATE_FUNCTION>"
             return string_to_return
-        string_to_return = string_to_return + "<CALL_FUNCTION> (id,\n"
+        string_to_return = string_to_return + string_tabs + "<CALL_FUNCTION>(id,\n"
         if self.path != "":
-            string_to_return = string_to_return + self.path + str(self.method_name) + "("
+            string_to_return = string_to_return + internal_string_tabs + self.path + str(self.method_name) + "("
         else:
-            string_to_return = string_to_return + str(self.method_name) + "("
+            string_to_return = string_to_return + internal_string_tabs + str(self.method_name) + "("
         if len(self.parameters_list) != 0:
             self.parameters_list.reverse()
             for param in self.parameters_list:
                 if isinstance(param, (str, int, tuple)):
                     string_to_return = string_to_return + str(param) + ","
                 else:
-                    string_to_return = string_to_return + param.abstract_syntax_tree() + ","
+                    string_to_return = string_to_return + "\n" + param.abstract_syntax_tree(
+                        number_of_tabs + 1) + ","
             string_to_return = string_to_return.removesuffix(",")
-        string_to_return = string_to_return + ")</CALL_FUNCTION>"
+        string_to_return = string_to_return + "))"
+        if self.origin_class_name != "":
+            string_to_return = string_to_return + "\n" + internal_string_tabs + "<ORIGIN_CLASS_NAME>" + \
+                               self.origin_class_name + "</ORIGIN_CLASS_NAME>"
+        string_to_return = string_to_return + "\n" + string_tabs + "</CALL_FUNCTION>"
         return string_to_return
