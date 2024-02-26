@@ -19,4 +19,5 @@ def compile_repository_files(path):
                 else:
                     compile_repository_files(path + "\\" + dir)
     else:
-        compile_file(path)
+        if not path.endswith(".pyc"):
+            compile_file(path)

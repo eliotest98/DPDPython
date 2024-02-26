@@ -103,8 +103,8 @@ class ClassReader:
                         # Create a variable object
                         variable = VariableObject()
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(
-                            str(type(previous_instructions[0].arg).__name__) + ":" + str(previous_instructions[0].arg))
+                        variable.set_type(str(type(previous_instructions[0].arg).__name__))
+                        variable.set_argument(previous_instructions[0].arg)
                         # Add variabile at variable list of class
                         class_object.add_variable(variable)
                     # Variable -> LOAD_NAME STORE_NAME
@@ -117,6 +117,7 @@ class ClassReader:
                         variable.set_variable_name(instruction.arg)
                         # Set the 1* Variable Object at 2* Variable Object
                         variable.set_argument(other_variable)
+                        variable.set_type("variable")
                         # Add the variable at instructions
                         class_object.add_instruction(variable)
                     # Variable -> BUILD_LIST LOAD_CONST LIST_EXTEND STORE_NAME
@@ -128,8 +129,8 @@ class ClassReader:
                         variable = VariableObject()
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(
-                            str(type(previous_instructions[1].arg).__name__) + ":" + str(previous_instructions[1].arg))
+                        variable.set_type(str(type(previous_instructions[1].arg).__name__))
+                        variable.set_argument(previous_instructions[1].arg)
                         # Add the variable at variables list:
                         class_object.add_variable(variable)
                     # Variable -> LOAD_CONST LOAD_CONST BUILD_MAP STORE_NAME
@@ -142,7 +143,7 @@ class ClassReader:
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
                         variable.set_argument(previous_instructions[0].arg + ":" + previous_instructions[1].arg)
-
+                        variable.set_type("dictionary")
                         # Add the variable at variables list:
                         class_object.add_variable(variable)
                     # Variable -> BUILD_SET LOAD_CONST SET_UPDATE STORE_NAME
@@ -154,8 +155,8 @@ class ClassReader:
                         variable = VariableObject()
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(
-                            str(type(previous_instructions[1].arg).__name__) + ":" + str(previous_instructions[1].arg))
+                        variable.set_type(str(type(previous_instructions[1].arg).__name__))
+                        variable.set_argument(previous_instructions[1].arg)
                         # Add the variable at variables list:
                         class_object.add_variable(variable)
                     # Variable -> CallMethod STORE_NAME
@@ -186,6 +187,7 @@ class ClassReader:
 
                         variable.set_variable_name(instruction.arg)
                         variable.set_argument(call_function)
+                        variable.set_type("CallMethod")
 
                         # Add the variable at instructions of file object
                         class_object.add_instruction(variable)
@@ -217,6 +219,7 @@ class ClassReader:
                             variable = VariableObject()
                             variable.set_variable_name(instruction.arg)
                             variable.set_argument(call_function)
+                            variable.set_type("CallFunction")
 
                             # Add the call function at instructions of file object
                             class_object.add_instruction(variable)
@@ -259,8 +262,6 @@ class ClassReader:
 
                         # Function -> LOAD_CONST Function
                         if previous_instructions[0].name == "LOAD_CONST":
-                            # There is a return value
-                            function.set_return_value(previous_instructions[0].arg)
                             # Get the bytecode of internal function
                             new_byte = bytecode.Bytecode.from_code(previous_instructions[1].arg)
                             # Start a function reader for read the internal function
@@ -270,9 +271,6 @@ class ClassReader:
                         elif previous_instructions[0].name == "BUILD_TUPLE":
                             others_instructions = [by[i - 5], by[i - 6]]
                             others_instructions.reverse()
-                            # There is type of return value
-                            function.set_return_value(
-                                others_instructions[0].arg + "(" + others_instructions[1].arg + ")")
                             # Get the bytecode of internal function
                             new_byte = bytecode.Bytecode.from_code(previous_instructions[1].arg)
                             # Start a function reader for read the internal function

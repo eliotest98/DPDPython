@@ -9,24 +9,23 @@ from Readers.FileReader import FileReader
 
 
 class ReadBytecode:
-    debug_active = 1
+    debug_active = 0
     system_object = ""
 
-    def __init__(self):
+    def __init__(self, debug_active):
+        self.debug_active = debug_active
         if self.debug_active == 1:
             print("Reading Bytecode...")
         self.system_object = SystemObject()
 
-    def select_file(self, current_directory, resource_directory, debug_active):
-        self.debug_active = debug_active
+    def select_file(self, current_directory, resource_directory):
         if os.path.isdir(current_directory):
             for directory in os.listdir(current_directory):
                 if os.path.isdir(current_directory + "\\" + directory):
-                    self.select_file(current_directory + "\\" + directory, resource_directory + "\\" + directory,
-                                     debug_active)
+                    self.select_file(current_directory + "\\" + directory, resource_directory + "\\" + directory)
                 else:
                     if directory.__contains__(".pyc"):
-                        self.select_file(current_directory + "\\" + directory, resource_directory, debug_active)
+                        self.select_file(current_directory + "\\" + directory, resource_directory)
         else:
             if os.path.isfile(current_directory):
                 if self.debug_active == 1:
@@ -68,18 +67,18 @@ class ReadBytecode:
             print(file_name + " File Reading...")
 
         # Start the visitor
-        file_reader = FileReader(file_directory)
+        file_reader = FileReader(file_directory, self.system_object)
         file_object = FileObject()
         file_object.set_class_name(file_name.replace(".py", ""))
         file_reader.read_file(file_object, by, self.debug_active)
 
-        self.system_object.add_class(file_object, os.path.dirname(file_directory))
+        self.system_object.add_class(file_object)
 
         if self.debug_active == 1:
             print(file_name + " End File Reading...")
 
         # Get Abstract Syntax Tree from visited class
-        ast = file_object.abstract_syntax_tree()
+        ast = file_object.abstract_syntax_tree(0)
         if self.debug_active == 1:
             print("Abstract Syntax Tree")
             print(ast)

@@ -2,6 +2,7 @@ from bytecode import Label
 
 from Objects.CallFunctionObject import CallFunctionObject
 from Objects.ImportObject import ImportObject
+from Objects.ReturnObject import ReturnObject
 from Objects.VariableObject import VariableObject
 from Readers.CallFunctionReader import CallFunctionReader
 
@@ -33,15 +34,20 @@ class FunctionReader:
 
                     # ReturnValue -> LOAD_CONST RETURN_VALUE
                     if previous_instructions[0].name == "LOAD_CONST":
-                        function_object.set_return_value(
-                            str(type(previous_instructions[0].arg).__name__) + ":" + str(previous_instructions[0].arg))
+                        return_object = ReturnObject()
+                        return_object.set_type(str(type(previous_instructions[0].arg).__name__))
+                        return_object.set_argument(previous_instructions[0].arg)
+                        function_object.set_return_object(return_object)
                     # ReturnValue -> LOAD_FAST RETURN_VALUE
                     elif previous_instructions[0].name == "LOAD_FAST":
                         # Create a Variable Object
                         variable = VariableObject()
                         variable.set_variable_name(previous_instructions[0].arg)
+                        return_object = ReturnObject()
+                        return_object.set_type("variable")
+                        return_object.set_argument(variable)
                         # Set the return value
-                        function_object.set_return_value(variable)
+                        function_object.set_return_object(return_object)
                     # ReturnValue -> CALL_METHOD RETURN_VALUE
                     elif previous_instructions[0].name == "CALL_METHOD":
                         previous_instruction = list()
@@ -74,8 +80,11 @@ class FunctionReader:
                         call_function_reader = CallFunctionReader()
                         call_function_reader.read_call_function(call_function, previous_instruction, debug_active)
 
+                        return_object = ReturnObject()
+                        return_object.set_argument(call_function)
+                        return_object.set_type("CallMethod")
                         # Add the variable at instructions of file object
-                        function_object.set_return_value(call_function)
+                        function_object.set_return_object(return_object)
                     else:
                         print("Not registered")
                         print(instruction)
@@ -110,6 +119,9 @@ class FunctionReader:
                         i = i + 1
                         continue
                     elif by[i + 1].name == "RETURN_VALUE":
+                        i = i + 1
+                        continue
+                    elif by[i + 1].name == "STORE_FAST":
                         i = i + 1
                         continue
 
@@ -163,9 +175,8 @@ class FunctionReader:
                             # Create a variable object
                             variable = VariableObject()
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
-                            variable.set_argument(
-                                str(type(previous_instructions[1].arg).__name__) + ":" + str(
-                                    previous_instructions[1].arg))
+                            variable.set_argument(previous_instructions[1].arg)
+                            variable.set_type(str(type(previous_instructions[1].arg).__name__))
                             # Add variabile at variable list of class
                             function_object.add_variable(variable)
                         # Variable -> LOAD_FAST STORE_FAST STORE_ATTR
@@ -178,6 +189,7 @@ class FunctionReader:
                             variable.set_variable_name(previous_instructions[1].arg)
                             # Set the 1* Variable Object at 2* Variable Object
                             other_variable.set_argument(variable)
+                            other_variable.set_type("variable")
                             # Add the variable at instructions
                             function_object.add_instruction(other_variable)
                         # Variable -> BUILD_LIST LOAD_CONST LIST_EXTEND STORE_FAST STORE_ATTR
@@ -189,9 +201,8 @@ class FunctionReader:
                             variable = VariableObject()
                             # The current instruction contains the name of variable
                             variable.set_variable_name(previous_instructions[3].arg + "." + instruction.arg)
-                            variable.set_argument(
-                                str(type(previous_instructions[1].arg).__name__) + ":" + str(
-                                    previous_instructions[1].arg))
+                            variable.set_argument(previous_instructions[1].arg)
+                            variable.set_type(str(type(previous_instructions[1].arg).__name__))
                             # Add the variable at variables list:
                             function_object.add_variable(variable)
                         # Variable -> LOAD_CONST LOAD_CONST BUILD_MAP STORE_FAST STORE_ATTR
@@ -204,7 +215,7 @@ class FunctionReader:
                             # The current instruction contains the name of variable
                             variable.set_variable_name(previous_instructions[3].arg + "." + instruction.arg)
                             variable.set_argument(previous_instructions[0].arg + ":" + previous_instructions[1].arg)
-
+                            variable.set_type("dictionary")
                             # Add the variable at variables list:
                             function_object.add_variable(variable)
                         # Variable -> BUILD_SET LOAD_CONST SET_UPDATE STORE_FAST STORE_ATTR
@@ -216,9 +227,8 @@ class FunctionReader:
                             variable = VariableObject()
                             # The current instruction contains the name of variable
                             variable.set_variable_name(previous_instructions[3].arg + "." + instruction.arg)
-                            variable.set_argument(
-                                str(type(previous_instructions[1].arg).__name__) + ":" + str(
-                                    previous_instructions[1].arg))
+                            variable.set_argument(previous_instructions[1].arg)
+                            variable.set_type(str(type(previous_instructions[1].arg).__name__))
                             # Add the variable at variables list:
                             function_object.add_variable(variable)
                         # Variable -> CallMethod STORE_FAST STORE_ATTR
@@ -251,6 +261,7 @@ class FunctionReader:
 
                             variable.set_variable_name(self_value.arg + "." + instruction.arg)
                             variable.set_argument(call_function)
+                            variable.set_type("CallMethod")
 
                             # Add the variable at instructions of file object
                             function_object.add_instruction(variable)
@@ -283,6 +294,7 @@ class FunctionReader:
                                 variable.set_variable_name(
                                     previous_instruction[1].arg + "." + previous_instruction[0].arg)
                                 variable.set_argument(call_function)
+                                variable.set_type("CallFunction")
 
                                 # Add the call function at instructions of file object
                                 function_object.add_instruction(variable)
@@ -306,8 +318,8 @@ class FunctionReader:
                         # Create a variable object
                         variable = VariableObject()
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(
-                            str(type(previous_instructions[0].arg).__name__) + ":" + str(previous_instructions[0].arg))
+                        variable.set_argument(previous_instructions[0].arg)
+                        variable.set_type(str(type(previous_instructions[0].arg).__name__))
                         # Add variabile at variable list of class
                         function_object.add_variable(variable)
                     # Variable -> LOAD_FAST STORE_FAST
@@ -320,6 +332,7 @@ class FunctionReader:
                         variable.set_variable_name(instruction.arg)
                         # Set the 1* Variable Object at 2* Variable Object
                         variable.set_argument(other_variable)
+                        variable.set_type("variable")
                         # Add the variable at instructions
                         function_object.add_instruction(variable)
                     # Variable -> BUILD_LIST LOAD_CONST LIST_EXTEND STORE_FAST
@@ -331,8 +344,8 @@ class FunctionReader:
                         variable = VariableObject()
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(
-                            str(type(previous_instructions[1].arg).__name__) + ":" + str(previous_instructions[1].arg))
+                        variable.set_argument(previous_instructions[1].arg)
+                        variable.set_type(str(type(previous_instructions[1].arg).__name__))
                         # Add the variable at variables list:
                         function_object.add_variable(variable)
                     # Variable -> LOAD_CONST LOAD_CONST BUILD_MAP STORE_FAST
@@ -345,7 +358,7 @@ class FunctionReader:
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
                         variable.set_argument(previous_instructions[0].arg + ":" + previous_instructions[1].arg)
-
+                        variable.set_type("dictionary")
                         # Add the variable at variables list:
                         function_object.add_variable(variable)
                     # Variable -> BUILD_SET LOAD_CONST SET_UPDATE STORE_FAST
@@ -357,8 +370,8 @@ class FunctionReader:
                         variable = VariableObject()
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(
-                            str(type(previous_instructions[1].arg).__name__) + ":" + str(previous_instructions[1].arg))
+                        variable.set_argument(previous_instructions[1].arg)
+                        variable.set_type(str(type(previous_instructions[1].arg).__name__))
                         # Add the variable at variables list:
                         function_object.add_variable(variable)
                     # Import -> LOAD_CONST LOAD_CONST IMPORT_NAME STORE_FAST
@@ -413,6 +426,7 @@ class FunctionReader:
 
                         variable.set_variable_name(instruction.arg)
                         variable.set_argument(call_function)
+                        variable.set_type("CallMethod")
 
                         # Add the variable at instructions of file object
                         function_object.add_instruction(variable)
@@ -437,13 +451,13 @@ class FunctionReader:
                             call_function = CallFunctionObject()
 
                             call_function_reader = CallFunctionReader()
-                            call_function_reader.read_call_function(call_function, previous_instruction,
-                                                                    debug_active)
+                            call_function_reader.read_call_function(call_function, previous_instruction, debug_active)
 
                             # Create a variable object
                             variable = VariableObject()
                             variable.set_variable_name(previous_instruction[0].arg)
                             variable.set_argument(call_function)
+                            variable.set_type("CallFunction")
 
                             # Add the call function at instructions of file object
                             function_object.add_instruction(variable)

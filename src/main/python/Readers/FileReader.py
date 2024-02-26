@@ -12,9 +12,11 @@ from Readers.FunctionReader import FunctionReader
 
 class FileReader:
     file_directory = ""
+    system_object = ""
 
-    def __init__(self, file_directory):
+    def __init__(self, file_directory, system_object):
         self.file_directory = file_directory
+        self.system_object = system_object
 
     def read_file(self, file_object, bytecode_instructions, debug_active):
         if debug_active == 1:
@@ -64,7 +66,6 @@ class FileReader:
                     call_function_reader.read_call_function(call_function, previous_instruction, debug_active)
                     # Add the call function at instructions of file object
                     file_object.add_instruction(call_function)
-
                 # CallFunction -> LOAD_NAME Some informations CALL_FUNCTION
                 case "CALL_FUNCTION":
                     previous_instruction = list()
@@ -122,6 +123,7 @@ class FileReader:
                             variable = VariableObject()
                             variable.set_variable_name(instruction.arg)
                             variable.set_argument(call_function)
+                            variable.set_type("CallFunction")
 
                             # Add the call function at instructions of file object
                             file_object.add_instruction(variable)
@@ -132,6 +134,7 @@ class FileReader:
                         # Create a class object
                         class_object = ClassObject()
                         class_object.set_class_name(instruction.arg)
+                        class_object.set_file_name(file_object.get_class_name())
 
                         # SuperclassList -> LOAD_NAME -> SuperclassList |
                         #                   LOAD_NAME                   |
@@ -151,6 +154,8 @@ class FileReader:
 
                         # Add the class at file object
                         file_object.add_class(class_object)
+                        # Add the class at the system
+                        self.system_object.add_class(class_object)
                     # Variable -> CallMethod STORE_NAME
                     elif previous_instruction[0].name == "CALL_METHOD":
                         previous_instruction = list()
@@ -179,6 +184,7 @@ class FileReader:
 
                         variable.set_variable_name(instruction.arg)
                         variable.set_argument(call_function)
+                        variable.set_type("CallMethod")
 
                         # Add the variable at instructions of file object
                         file_object.add_instruction(variable)
@@ -213,8 +219,8 @@ class FileReader:
                         variable = VariableObject()
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(
-                            str(type(previous_instruction[1].arg).__name__) + ":" + str(previous_instruction[1].arg))
+                        variable.set_type(str(type(previous_instruction[1].arg).__name__))
+                        variable.set_argument(previous_instruction[1].arg)
                         # Add the variable at variables list:
                         file_object.add_variable(variable)
                     # Variable -> LOAD_CONST LOAD_CONST BUILD_MAP STORE_NAME
@@ -227,6 +233,7 @@ class FileReader:
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
                         variable.set_argument(previous_instruction[0].arg + ":" + previous_instruction[1].arg)
+                        variable.set_type("dictionary")
                         # Add the variable at variables list:
                         file_object.add_variable(variable)
                     # Variable -> BUILD_SET LOAD_CONST SET_UPDATE STORE_NAME
@@ -238,8 +245,8 @@ class FileReader:
                         variable = VariableObject()
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(
-                            str(type(previous_instruction[1].arg).__name__) + ":" + str(previous_instruction[1].arg))
+                        variable.set_type(str(type(previous_instruction[1].arg).__name__))
+                        variable.set_argument(previous_instruction[1].arg)
                         # Add the variable at variables list:
                         file_object.add_variable(variable)
                     # Variable -> LOAD_CONST STORE_NAME
@@ -247,8 +254,8 @@ class FileReader:
                         variable = VariableObject()
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(
-                            str(type(previous_instruction[0].arg).__name__) + ":" + str(previous_instruction[0].arg))
+                        variable.set_type(str(type(previous_instruction[0].arg).__name__))
+                        variable.set_argument(previous_instruction[0].arg)
                         # Add the variable at variables list:
                         file_object.add_variable(variable)
                     # Function -> LOAD_CONST(InstructionList) LOAD_CONST MAKE_FUNCTION STORE_NAME |
@@ -266,8 +273,6 @@ class FileReader:
 
                         # Function -> LOAD_CONST Function
                         if previous_instruction[0].name == "LOAD_CONST":
-                            # There is a return value
-                            function.set_return_value(previous_instruction[0].arg)
                             # Get the bytecode of internal function
                             new_byte = bytecode.Bytecode.from_code(previous_instruction[1].arg)
                             # Start a function reader for read the internal function
@@ -277,9 +282,6 @@ class FileReader:
                         elif previous_instruction[0].name == "BUILD_TUPLE":
                             others_instructions = [by[i - 5], by[i - 6]]
                             others_instructions.reverse()
-                            # There is type of return value
-                            function.set_return_value(
-                                others_instructions[0].arg + "(" + others_instructions[1].arg + ")")
                             # Get the bytecode of internal function
                             new_byte = bytecode.Bytecode.from_code(previous_instruction[1].arg)
                             # Start a function reader for read the internal function
