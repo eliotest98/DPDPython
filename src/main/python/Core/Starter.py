@@ -22,12 +22,12 @@ selected_directory = os.getcwd().replace("\\Core", "")
 
 # Compile Oracle Files because there isn't invoked from any class
 Compiler.compile_file(current_directory + "\\Oracle\\Adapter\\AdapterPattern.py")
+Compiler.compile_repository_files(current_directory + "\\Oracle\\AdapterExtended")
 Compiler.compile_file(current_directory + "\\Oracle\\Classes\\Classes.py")
-Compiler.compile_file(current_directory + "\\Oracle\\Prova\\__init__.py")
 
 bytecode = ReadBytecode(debug_active=0)
 # Generate the Oracles Files
-bytecode.select_file(current_directory + "\\Oracle\\Adapter", resource_directory + "\\Oracles\\Adapter")
+bytecode.select_file(current_directory + "\\Oracle\\AdapterExtended", resource_directory + "\\Oracles\\AdapterExtended")
 # SuperclassDetector for Oracles Files
 SuperclassDetector(bytecode.get_system_object())
 # VariableDetector for Oracles Files

@@ -36,7 +36,7 @@ class MethodOriginDetector:
                                             "."):
                                         candidate_classes.append(class_of_function_list)
                             if 0 < len(candidate_classes) < 2:
-                                instruction.get_argument().set_original_class_name(candidate_classes[0].split(".")[1])
+                                instruction.get_argument().set_original_class_name(candidate_classes[0])
                     elif isinstance(instruction, CallFunctionObject):
                         candidate_classes = list()
                         for class_of_function_list in self.functions_list:
@@ -44,7 +44,7 @@ class MethodOriginDetector:
                                 if function_of_class == instruction.get_method_name().removeprefix("."):
                                     candidate_classes.append(class_of_function_list)
                         if 0 < len(candidate_classes) < 2:
-                            instruction.set_original_class_name(candidate_classes[0].split(".")[1])
+                            instruction.set_original_class_name(candidate_classes[0])
                 if isinstance(function.get_return_object().get_argument(), CallFunctionObject):
                     candidate_classes = list()
                     for class_of_function_list in self.functions_list:
@@ -53,25 +53,22 @@ class MethodOriginDetector:
                                     .get_method_name().removeprefix("."):
                                 candidate_classes.append(class_of_function_list)
                     if 0 < len(candidate_classes) < 2:
-                        function.get_return_object().get_argument().set_original_class_name(
-                            candidate_classes[0].split(".")[1])
+                        function.get_return_object().get_argument().set_original_class_name(candidate_classes[0])
             for instruction in class_or_file_object.get_instructions_list():
                 if isinstance(instruction, VariableObject):
                     if isinstance(instruction.get_argument(), CallFunctionObject):
                         candidate_classes = list()
                         for class_of_function_list in self.functions_list:
                             for function_of_class in self.functions_list[class_of_function_list]:
-                                if function_of_class == instruction.get_argument().get_method_name().removeprefix(
-                                        "."):
+                                if function_of_class == instruction.get_argument().get_method_name().removeprefix("."):
                                     candidate_classes.append(class_of_function_list)
                         if 0 < len(candidate_classes) < 2:
-                            instruction.get_argument().set_original_class_name(candidate_classes[0].split(".")[1])
+                            instruction.get_argument().set_original_class_name(candidate_classes[0])
                 elif isinstance(instruction, CallFunctionObject):
                     candidate_classes = list()
                     for class_of_function_list in self.functions_list:
                         for function_of_class in self.functions_list[class_of_function_list]:
-                            if function_of_class == instruction.get_method_name().removeprefix(
-                                    "."):
+                            if function_of_class == instruction.get_method_name().removeprefix("."):
                                 candidate_classes.append(class_of_function_list)
                     if 0 < len(candidate_classes) < 2:
-                        instruction.set_original_class_name(candidate_classes[0].split(".")[1])
+                        instruction.set_original_class_name(candidate_classes[0])

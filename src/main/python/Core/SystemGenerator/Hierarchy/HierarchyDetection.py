@@ -20,8 +20,11 @@ class HierarchyDetection:
             file_object = system_object.get_class_object_with_position(i)
             if isinstance(file_object, FileObject):
                 for class_object in file_object.get_class_list():
-                    if self.get_hierarchy(self.hierarchy_list, class_object.get_class_name()) is None:
-                        non_inheriting_class.add(class_object.get_class_name())
+                    key = class_object.get_class_name()
+                    if class_object.get_file_name() != "":
+                        key = class_object.get_file_name() + "." + key
+                    if self.get_hierarchy(self.hierarchy_list, key) is None:
+                        non_inheriting_class.add(key)
         self.hierarchy_list.append(non_inheriting_class)
 
     def get_superclass_hierarchy_list(self, system_object):
@@ -30,18 +33,21 @@ class HierarchyDetection:
             file_object = system_object.get_class_object_with_position(i)
             if isinstance(file_object, FileObject):
                 for class_object in file_object.get_class_list():
+                    key = class_object.get_class_name()
+                    if class_object.get_file_name() != "":
+                        key = class_object.get_file_name() + "." + key
                     if len(class_object.get_superclass_list()) != 0:
-                        child_hierarchy = self.get_hierarchy(superclass_list, class_object.get_class_name())
+                        child_hierarchy = self.get_hierarchy(superclass_list, key)
                         for parent in class_object.get_superclass_list():
                             parent_hierarchy = self.get_hierarchy(superclass_list, parent)
                             if child_hierarchy is None and parent_hierarchy is None:
                                 ih = InheritanceHierarchy()
-                                ih.add_child_to_parent(class_object.get_class_name(), parent)
+                                ih.add_child_to_parent(key, parent)
                                 superclass_list.append(ih)
                             elif child_hierarchy is None:
-                                parent_hierarchy.add_child_to_parent(class_object.get_class_name(), parent)
+                                parent_hierarchy.add_child_to_parent(key, parent)
                             elif parent_hierarchy is None:
-                                child_hierarchy.add_child_to_parent(class_object.get_class_name(), parent)
+                                child_hierarchy.add_child_to_parent(key, parent)
                             elif child_hierarchy.equals(parent_hierarchy):
                                 parent_hierarchy.add_child_root_node_to_parent(child_hierarchy.get_root_node(), parent)
                                 superclass_list.remove(child_hierarchy)

@@ -34,7 +34,10 @@ class SystemGenerator:
         index = list()
 
         for co in self.system_object.get_class_list_iterator():
-            index.append(co.get_class_name())
+            key = co.get_class_name()
+            if co.get_file_name() != "":
+                key = co.get_file_name() + "." + key
+            index.append(key)
             discrete_invocations = []
             # Iterate on each FunctionObject in the class
             for mo in co.get_functions_list():
@@ -79,7 +82,10 @@ class SystemGenerator:
         labels = list()
 
         for co in self.system_object.get_class_list_iterator():
-            labels.append(co.get_class_name())
+            key = co.get_class_name()
+            if co.get_file_name() != "":
+                key = co.get_file_name() + "." + key
+            labels.append(key)
             for superclass in co.get_superclass_list():
                 pos = self.system_object.get_position_in_class_list(superclass)
                 if pos != -1:
@@ -97,7 +103,10 @@ class SystemGenerator:
         labels = list()
 
         for co in self.system_object.get_class_list_iterator():
-            labels.append(co.get_class_name())
+            key = co.get_class_name()
+            if co.get_file_name() != "":
+                key = co.get_file_name() + "." + key
+            labels.append(key)
             for fo in co.get_variables_list():
                 if isinstance(fo, VariableObject):
                     class_type = fo.get_type()
@@ -245,14 +254,16 @@ class SystemGenerator:
                     hierarchies_class_name_list.append(s)
 
         hierarchies_matrix_container.set_class_name_list(hierarchies_class_name_list)
+
+
         generalization_output = self.generate_hierarchies_matrix(hierarchies_class_name_list,
                                                                  self.matrix_container.get_generalization_matrix(),
                                                                  None)
         hierarchies_matrix_container.set_generalization_matrix(generalization_output[0])
 
+
         association_output = self.generate_hierarchies_matrix(hierarchies_class_name_list,
                                                               self.matrix_container.get_association_matrix(), None)
-
         hierarchies_matrix_container.set_association_matrix(association_output[0])
 
         # Repeat the above two lines for each pattern matrix

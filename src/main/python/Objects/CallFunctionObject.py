@@ -21,6 +21,9 @@ class CallFunctionObject:
     def set_path(self, path):
         self.path = path
 
+    def get_path(self):
+        return self.path
+
     def add_parameter(self, parameter):
         if parameter is None:
             self.parameters_list.append("None")

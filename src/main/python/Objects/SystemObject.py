@@ -10,7 +10,10 @@ class SystemObject:
         self.class_name_map = {}
 
     def add_class(self, c):
-        self.class_name_map[c.get_class_name()] = len(self.class_list)
+        key = c.get_class_name()
+        if c.get_file_name() != "":
+            key = c.get_file_name() + "." + key
+        self.class_name_map[key] = len(self.class_list)
         self.class_list.append(c)
 
     def get_class_object_with_class_name(self, class_name):
@@ -50,8 +53,9 @@ class SystemObject:
         return "".join(sb)
 
     def abstract_syntax_tree(self):
-        return_string = ""
+        return_string = "<FILE_LIST>\n"
         for single_file in self.class_list:
             if isinstance(single_file, FileObject):
-                return_string = return_string + "<FILE_LIST>\n\t" + single_file.abstract_syntax_tree(1) + "</FILE_LIST>"
+                return_string = return_string + "\t" + single_file.abstract_syntax_tree(1)
+        return_string = return_string + "</FILE_LIST>"
         return return_string
