@@ -60,6 +60,12 @@ class FunctionObject:
     def add_import(self, import_object):
         self.import_list.append(import_object)
 
+    def get_imports_list(self):
+        return self.import_list
+
+    def remove_import(self, import_object):
+        self.import_list.remove(import_object)
+
     def abstract_syntax_tree(self, number_of_tabs):
         string_tabs = (number_of_tabs + 1) * "\t"
         internal_string_tabs = string_tabs + "\t"

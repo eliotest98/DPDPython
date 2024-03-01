@@ -56,10 +56,10 @@ Variable(Function) -> LOAD_CONST STORE_FAST                                     
                       BUILD_LIST LOAD_CONST LIST_EXTEND STORE_FAST STORE_ATTR   |
                       BUILD_SET LOAD_CONST SET_UPDATE STORE_FAST                |
                       BUILD_SET LOAD_CONST SET_UPDATE STORE_FAST STORE_ATTR     |
-                      CallMethod STORE_FAST                                     | Questa sa da fare
-                      CallMethod STORE_FAST STORE_ATTR                          | Questa sa da fare
-                      CallFunction STORE_FAST                                   | Questa sa da fare
-                      CallFunction STORE_FAST STORE_ATTR                        | Questa sa da fare
+                      CallMethod STORE_FAST                                     |
+                      CallMethod STORE_FAST STORE_ATTR                          |
+                      CallFunction STORE_FAST                                   |
+                      CallFunction STORE_FAST STORE_ATTR                        |
                       Cicle STORE_FAST                                          | Questa sa da vedere e da fare
                       Cicle STORE_FAST STORE_ATTR                               | Questa sa da vedere e da fare
 

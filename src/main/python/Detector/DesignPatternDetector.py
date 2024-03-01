@@ -78,18 +78,6 @@ class SimilarityAlgorithm:
 
         return x
 
-    def all_elements_equal_to_zero(self, m):
-        return m.nunique().sum() <= 1
-
-    def norm1(self, m):
-        # Calculates the absolute sum of each column
-        s = m.abs().sum(axis=0)
-
-        # Find the maximum of the sums
-        f = s.max()
-
-        return f
-
     def get_similarity_score(self, a, b):
         m, n = a.shape[0], b.shape[1]
         if (a.values == np.zeros((m, a.shape[1]))).all() or (b.values == np.zeros((b.shape[0], n))).all():
@@ -112,6 +100,18 @@ class SimilarityAlgorithm:
                 prev_x = x
 
         return x
+
+    def all_elements_equal_to_zero(self, m):
+        return m.nunique().sum() <= 1
+
+    def norm1(self, m):
+        # Calculates the absolute sum of each column
+        s = m.abs().sum(axis=0)
+
+        # Find the maximum of the sums
+        f = s.max()
+
+        return f
 
     def convergence(self, a, b):
         # Calcola la differenza assoluta tra le due matrici

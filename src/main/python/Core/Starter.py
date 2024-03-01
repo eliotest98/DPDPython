@@ -32,10 +32,10 @@ bytecode.select_file(current_directory + "\\Oracle\\AdapterExtended", resource_d
 SuperclassDetector(bytecode.get_system_object())
 # VariableDetector for Oracles Files
 VariableDetector(bytecode.get_system_object())
-# TypeDetector for Oracles Files
-TypeDetector(bytecode.get_system_object())
 # Method Origin Detector for Oracles Files
 MethodOriginDetector(bytecode.get_system_object())
+# TypeDetector for Oracles Files
+TypeDetector(bytecode.get_system_object())
 # Write on a file the Abstract Syntax Tree (TypeChecked)
 with open(resource_directory + "\\Oracles\\SystemObject.xml", "w") as f:
     f.write(bytecode.get_system_object().abstract_syntax_tree())
@@ -65,10 +65,11 @@ for pattern in pattern_list:
 
 
 for pattern_individuated in pattern_results:
+    print("Instance of: " + pattern_individuated.get_pattern_name())
     for pattern_instance in pattern_individuated.get_pattern_instances():
-        print("Instance of: " + pattern_individuated.get_pattern_name())
         print("Number of instances: ", pattern_instance.get_instance_counter())
         print(pattern_instance)
+    print("----------------------------------------")
 
 # Download the file from a repository
 repository = GithubRepository("AaronWard/covidify", resource_directory + "\\GeneratedFiles\\DirectorySelected")

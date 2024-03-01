@@ -14,11 +14,9 @@ class ScopeDetector:
     def get_all_variables(self, system_object):
         for i in range(system_object.get_class_number()):
             class_or_file_object = system_object.get_class_object_with_position(i)
-            class_name = class_or_file_object.get_class_name()
-            file_name = class_or_file_object.get_file_name()
-            key = file_name + "." + class_name
-            if file_name is None or file_name == "":
-                key = class_name
+            key = class_or_file_object.get_class_name()
+            if class_or_file_object.get_file_name() != "":
+                key = class_or_file_object.get_file_name() + "." + key
             for variable in class_or_file_object.get_variables_list():
                 if key not in self.variable_scope:
                     scope = Scope()

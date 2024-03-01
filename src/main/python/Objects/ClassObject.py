@@ -62,6 +62,9 @@ class ClassObject:
     def add_import(self, import_object):
         self.import_list.append(import_object)
 
+    def get_imports_list(self):
+        return self.import_list
+
     def add_instruction(self, instruction):
         self.instructions_list.append(instruction)
 

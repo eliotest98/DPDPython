@@ -18,8 +18,18 @@ class ImportObject:
     def set_from_name(self, from_name):
         self.from_name = from_name
 
+    def get_from_name(self):
+        return self.from_name
+
     def add_string(self, string):
-        self.string_list.append(string)
+        if isinstance(string, tuple):
+            for str in string:
+                self.string_list.append(str)
+        else:
+            self.string_list.append(string)
+
+    def get_import_list(self):
+        return self.string_list
 
     def abstract_syntax_tree(self, number_of_tabs):
         string_tabs = (number_of_tabs + 1) * "\t"

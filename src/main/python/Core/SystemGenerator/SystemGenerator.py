@@ -188,7 +188,6 @@ class SystemGenerator:
     def generate_cluster_set(self, pattern_descriptor):
         cluster_set = ClusterSet()
         system_adjacency_matrix = self.matrix_container.get_method_invocations_matrix()
-
         for i in range(len(self.hierarchy_list)):
             ih1 = self.hierarchy_list[i]
             ih2 = None
