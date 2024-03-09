@@ -1,5 +1,7 @@
 from Objects.CallFunctionObject import CallFunctionObject
+from Objects.ExceptionObject import ExceptionObject
 from Objects.FileObject import FileObject
+from Objects.IfObject import IfObject
 from Objects.VariableObject import VariableObject
 
 # This class detect the superclasses of a specific class
@@ -49,6 +51,13 @@ class SuperclassDetector:
             return list_.get_method_name()
         elif isinstance(list_, VariableObject):
             self.recursive_detection(list_.get_argument())
+        elif isinstance(list_, IfObject):
+            self.recursive_detection(list_.get_instruction_list_true())
+            self.recursive_detection(list_.get_instruction_list_false())
+        elif isinstance(list_, ExceptionObject):
+            self.recursive_detection(list_.get_instruction_list_try())
+            self.recursive_detection(list_.get_instruction_list_except())
         else:
-            for instruction in list_:
-                self.recursive_detection(instruction)
+            if not isinstance(list_, (int, str)):
+                for instruction in list_:
+                    self.recursive_detection(instruction)

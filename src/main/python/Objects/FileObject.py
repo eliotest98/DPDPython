@@ -1,6 +1,5 @@
 from Objects.CallFunctionObject import CallFunctionObject
 from Objects.ClassObject import ClassObject
-from Objects.FunctionObject import FunctionObject
 
 # This class represent a class without "class" key instance
 # A class is formed from:
@@ -11,9 +10,6 @@ from Objects.FunctionObject import FunctionObject
 # - some functions with "def" key
 # - variables
 # - instructions
-from Objects.VariableObject import VariableObject
-
-
 class FileObject(ClassObject):
     class_list = list()
 
@@ -57,9 +53,7 @@ class FileObject(ClassObject):
         if len(self.instructions_list) != 0:
             string_to_return = string_to_return + string_tabs + "<INSTRUCTION_LIST>\n"
             for instruction in self.instructions_list:
-                if isinstance(instruction, VariableObject):
-                    string_to_return = string_to_return + instruction.abstract_syntax_tree(number_of_tabs + 1) + "\n"
-                elif isinstance(instruction, CallFunctionObject):
+                if isinstance(instruction, CallFunctionObject):
                     string_to_return = string_to_return + instruction.abstract_syntax_tree(number_of_tabs) + "\n"
                 else:
                     string_to_return = string_to_return + instruction.abstract_syntax_tree(number_of_tabs + 1) + "\n"

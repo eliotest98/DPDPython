@@ -85,7 +85,7 @@ class CallFunctionObject:
                     string_to_return = string_to_return + str(param) + ","
                 else:
                     string_to_return = string_to_return + "\n" + param.abstract_syntax_tree(
-                        number_of_tabs + 1) + ","
+                        number_of_tabs + 2) + ","
             string_to_return = string_to_return.removesuffix(",")
         string_to_return = string_to_return + "))"
         if self.origin_class_name != "":

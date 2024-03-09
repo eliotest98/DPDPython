@@ -12,6 +12,7 @@ from Objects.FunctionObject import FunctionObject
 # - some functions with "def" key
 # - variables
 # - instructions
+from Objects.IfObject import IfObject
 from Objects.VariableObject import VariableObject
 
 
@@ -116,10 +117,8 @@ class ClassObject:
             for instruction in self.instructions_list:
                 if isinstance(instruction, CallFunctionObject):
                     string_to_return = string_to_return + instruction.abstract_syntax_tree(number_of_tabs + 1) + "\n"
-                elif isinstance(instruction, VariableObject):
-                    string_to_return = string_to_return + instruction.abstract_syntax_tree(number_of_tabs + 2) + "\n"
                 else:
-                    string_to_return = string_to_return + instruction.abstract_syntax_tree(number_of_tabs + 1) + "\n"
+                    string_to_return = string_to_return + instruction.abstract_syntax_tree(number_of_tabs + 2) + "\n"
             string_to_return = string_to_return + internal_string_tabs + "</INSTRUCTION_LIST>\n"
         string_to_return = string_to_return + string_tabs + "</CLASS>"
         return string_to_return
