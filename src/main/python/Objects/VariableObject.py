@@ -37,6 +37,9 @@ class VariableObject:
     def get_argument(self):
         return self.argument
 
+    def __str__(self):
+        return self.variable_name
+
     def abstract_syntax_tree(self, number_of_tabs):
         string_tabs = (number_of_tabs + 1) * "\t"
         internal_string_tabs = string_tabs + "\t"

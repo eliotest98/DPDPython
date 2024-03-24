@@ -26,6 +26,8 @@ class CicleObject:
         string_to_return = string_to_return + internal_string_tabs + "<CONDITION>\n"
         if isinstance(self.condition, VariableObject):
             string_to_return = string_to_return + self.condition.abstract_syntax_tree(number_of_tabs + 2)
+        elif isinstance(self.condition, str):
+            string_to_return = string_to_return + internal_string_tabs + self.condition
         else:
             string_to_return = string_to_return + self.condition.abstract_syntax_tree(number_of_tabs + 1)
         string_to_return = string_to_return + "\n" + internal_string_tabs + "</CONDITION>\n"

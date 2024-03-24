@@ -48,6 +48,13 @@ class CallFunctionObject:
     def get_original_class_name(self):
         return self.origin_class_name
 
+    def __str__(self):
+        params = "("
+        for parameter in self.parameters_list:
+            params = params + str(parameter) + " , "
+        params = params.removesuffix(" , ") + ")"
+        return self.path + self.method_name + params
+
     def abstract_syntax_tree(self, number_of_tabs):
         string_tabs = (number_of_tabs + 2) * "\t"
         internal_string_tabs = string_tabs + "\t"
@@ -82,10 +89,13 @@ class CallFunctionObject:
             self.parameters_list.reverse()
             for param in self.parameters_list:
                 if isinstance(param, (str, int, tuple)):
-                    string_to_return = string_to_return + str(param) + ","
-                else:
+                    string_to_return = string_to_return + str(param) + "\n\t" + internal_string_tabs + ","
+                elif isinstance(param, CallFunctionObject):
                     string_to_return = string_to_return + "\n" + param.abstract_syntax_tree(
-                        number_of_tabs + 2) + ","
+                        number_of_tabs + 2) + "\n\t" + internal_string_tabs + ","
+                else:
+                    string_to_return = string_to_return + "\n" + internal_string_tabs + param.abstract_syntax_tree(
+                        number_of_tabs + 2) + internal_string_tabs + ","
             string_to_return = string_to_return.removesuffix(",")
         string_to_return = string_to_return + "))"
         if self.origin_class_name != "":

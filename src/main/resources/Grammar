@@ -84,7 +84,8 @@ Instruction -> CallFunction |
                Cicle        |
                Variable     |
                If           |
-               Exception
+               Exception    |
+               With
 
 CallMethod -> LOAD_NAME LOAD_METHOD CALL_METHOD                 |
               LOAD_NAME LOAD_ATTR LOAD_METHOD CALL_METHOD       |
@@ -102,7 +103,8 @@ BodyCallFunction -> LOAD_CONST          |
                     LOAD_NAME           |
                     LOAD_FAST           |
                     BINARY_SUBSCR       |
-                    BINARY ADD          |
+                    BINARY_ADD          |
+                    BUILD_LIST          |
                     LOAD_ATTR LOAD_NAME |
                     CallMethod          |
                     CallFunction        |
@@ -117,7 +119,9 @@ Condition -> LOAD_CONST                         |
 CicleBody -> InstructionList
 
 If -> Operation POP_JUMP_IF_FALSE InstructionList POP_TOP InstructionList LOAD_CONST RETURN_VALUE <Label> If    |
-      Operation POP_JUMP_IF_FALSE InstructionList POP_TOP InstructionList LOAD_CONST RETURN_VALUE <Label> Else
+If -> Operation POP_JUMP_IF_FALSE InstructionList POP_TOP InstructionList LOAD_CONST RETURN_VALUE <Label> If    |
+      Operation POP_JUMP_IF_TRUE InstructionList POP_TOP InstructionList LOAD_CONST RETURN_VALUE <Label> Else   |
+      Operation POP_JUMP_IF_TRUE InstructionList POP_TOP InstructionList LOAD_CONST RETURN_VALUE <Label> Else   |
       /* empty */
 
 Else -> InstructionList POP_TOP InstructionList LOAD_CONST RETURN_VALUE
@@ -130,3 +134,5 @@ Operand -> LOAD_CONST           |
            LOAD_FAST
 
 Exception -> SETUP_FINALLY<Label> InstructionList POP_BLOCK InstructionList <Label> POP_TOP POP_TOP POP_TOP InstructionList POP_EXCEPT InstructionList
+
+With -> Condition SETUP_WITH<Label> InstructionList POP_BLOCK

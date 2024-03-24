@@ -4,11 +4,11 @@
 # - instructions for except clause
 class ExceptionObject:
     instruction_list_try = list()
-    instruction_list_except = list()
+    instruction_list_except = dict()
 
     def __init__(self):
         self.instruction_list_try = list()
-        self.instruction_list_except = list()
+        self.instruction_list_except = dict()
 
     def add_instruction_try(self, instruction):
         self.instruction_list_try.append(instruction)
@@ -16,8 +16,10 @@ class ExceptionObject:
     def get_instruction_list_try(self):
         return self.instruction_list_try
 
-    def add_instruction_except(self, instruction):
-        self.instruction_list_except.append(instruction)
+    def add_instruction_except(self, except_name, instruction):
+        if except_name not in self.instruction_list_except:
+            self.instruction_list_except[except_name] = list()
+        self.instruction_list_except[except_name].append(instruction)
 
     def get_instruction_list_except(self):
         return self.instruction_list_except
@@ -34,12 +36,15 @@ class ExceptionObject:
                 string_to_return = string_to_return + instruction.abstract_syntax_tree(number_of_tabs + 3) + "\n"
             string_to_return = string_to_return + instruction_tab + "</INSTRUCTION_LIST>\n"
         string_to_return = string_to_return + internal_string_tabs + "</TRY>\n"
-        string_to_return = string_to_return + internal_string_tabs + "<EXCEPT>\n"
         if len(self.instruction_list_except) != 0:
-            string_to_return = string_to_return + instruction_tab + "<INSTRUCTION_LIST>\n"
-            for instruction in self.instruction_list_except:
-                string_to_return = string_to_return + instruction.abstract_syntax_tree(number_of_tabs + 3) + "\n"
-            string_to_return = string_to_return + instruction_tab + "</INSTRUCTION_LIST>\n"
-        string_to_return = string_to_return + internal_string_tabs + "</EXCEPT>\n"
+            for key in self.instruction_list_except:
+                string_to_return = string_to_return + internal_string_tabs + "<EXCEPT> (id," + key + ")\n"
+                if len(self.instruction_list_except[key]) != 0:
+                    string_to_return = string_to_return + instruction_tab + "<INSTRUCTION_LIST>\n"
+                    for instruction in self.instruction_list_except[key]:
+                        string_to_return = string_to_return + instruction.abstract_syntax_tree(
+                            number_of_tabs + 3) + "\n"
+                    string_to_return = string_to_return + instruction_tab + "</INSTRUCTION_LIST>\n"
+                string_to_return = string_to_return + internal_string_tabs + "</EXCEPT>\n"
         string_to_return = string_to_return + string_tabs + "</EXCEPTION>"
         return string_to_return

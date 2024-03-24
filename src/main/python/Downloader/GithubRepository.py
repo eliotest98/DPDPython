@@ -10,21 +10,26 @@ class GithubRepository:
     repository_name = ""
     destination_folder = ""
     repository_url = ""
+    branch_name = ""
     folder = ""
 
-    def __init__(self, repository_name, destination_folder):
+    def __init__(self, repository_name, destination_folder, branch_name):
         self.repository_name = repository_name
         self.destination_folder = destination_folder
         self.repository_url = "https://github.com/" + repository_name
         split_name = repository_name.split("/")
         self.folder = destination_folder + "\\" + split_name[0] + "\\" + split_name[1] + "\\Source"
+        self.branch_name = branch_name
 
     def download_repository(self):
         if os.path.isdir(self.folder):
             if not os.listdir(self.folder):
                 print("Directory is empty, downloading...")
                 print("Repository: " + self.repository_url)
-                Repo.clone_from(self.repository_url, self.folder)
+                if self.branch_name == "":
+                    Repo.clone_from(self.repository_url, self.folder)
+                else:
+                    Repo.clone_from(self.repository_url, self.folder, branch=self.branch_name)
                 print("Repository Downloaded!")
             else:
                 print("Directory is not empty")
@@ -33,7 +38,10 @@ class GithubRepository:
         else:
             print("Directory not exist, downloading...")
             print("Repository: " + self.repository_url)
-            Repo.clone_from(self.repository_url, self.folder)
+            if self.branch_name == "":
+                Repo.clone_from(self.repository_url, self.folder)
+            else:
+                Repo.clone_from(self.repository_url, self.folder, branch=self.branch_name)
             print("Repository Downloaded!")
 
     def change_permissions(self):

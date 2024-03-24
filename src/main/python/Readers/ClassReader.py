@@ -193,8 +193,7 @@ class ClassReader:
                     previous_instruction = list()
                     count = i - 1
                     previous_instruction.append(instruction)
-                    while by[count].name != "POP_TOP" and by[count].name != "NOP" and by[count].name != "STORE_NAME" \
-                            and by[count].name != "STORE_SUBSCR":
+                    while by[count].name != "POP_TOP" and by[count].name != "NOP" and by[count].name != "STORE_NAME":
                         previous_instruction.append(by[count])
                         count = count - 1
 
@@ -210,22 +209,7 @@ class ClassReader:
                 # CallFunction -> LOAD_NAME Some informations CALL_FUNCTION
                 case "CALL_FUNCTION":
 
-                    if by[i + 1].name == "GET_ITER":
-                        i = i + 1
-                        continue
-                    elif by[i + 1].name == "STORE_SUBSCR":
-                        i = i + 1
-                        continue
-                    elif by[i + 1].name == "STORE_NAME":
-                        i = i + 1
-                        continue
-                    elif by[i + 1].name == "LOAD_METHOD":
-                        i = i + 1
-                        continue
-                    elif by[i + 1].name == "CALL_FUNCTION":
-                        i = i + 1
-                        continue
-                    elif by[i + 1].name == "LOAD_NAME":
+                    if by[i + 1].name != "POP_TOP":
                         i = i + 1
                         continue
 

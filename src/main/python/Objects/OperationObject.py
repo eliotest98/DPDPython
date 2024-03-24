@@ -3,6 +3,7 @@
 # - type
 # - first operand
 # - second operand (optional)
+from Objects.CallFunctionObject import CallFunctionObject
 from Objects.VariableObject import VariableObject
 
 
@@ -28,17 +29,25 @@ class OperationObject:
     def set_second_operand(self, operand):
         self.second_operand = operand
 
+    def __str__(self):
+        return str(self.first_operand) + " " + self.operation_type + " " + str(self.second_operand)
+
     def abstract_syntax_tree(self, number_of_tabs):
         string_tabs = (number_of_tabs + 1) * "\t"
         internal_string_tabs = string_tabs + "\t"
         string_to_return = "<OP>\n"
-        string_to_return = string_to_return + internal_string_tabs + "<TYPE>" + self.operation_type + "</TYPE>\n"
-        if isinstance(self.first_operand, VariableObject):
+        string_to_return = string_to_return + internal_string_tabs + "<TYPE>" + str(self.operation_type) + "</TYPE>\n"
+        if isinstance(self.first_operand, (VariableObject, CallFunctionObject)):
             string_to_return = string_to_return + internal_string_tabs + "<OPERAND>\n" + self.first_operand.abstract_syntax_tree(
                 number_of_tabs + 2) + "\n" + internal_string_tabs + "</OPERAND>\n"
         else:
-            string_to_return = string_to_return + internal_string_tabs + "<OPERAND>" + self.first_operand + "</OPERAND>\n"
+            string_to_return = string_to_return + internal_string_tabs + "<OPERAND>" + str(
+                self.first_operand) + "</OPERAND>\n"
         if self.second_operand != "":
-            string_to_return = string_to_return + internal_string_tabs + "<OPERAND>" + self.second_operand + "</OPERAND>\n"
+            if isinstance(self.second_operand, (VariableObject, CallFunctionObject)):
+                string_to_return = string_to_return + internal_string_tabs + "<OPERAND>\n" + self.second_operand.abstract_syntax_tree(
+                    number_of_tabs + 2) + "\n" + internal_string_tabs + "</OPERAND>\n"
+            else:
+                string_to_return = string_to_return + internal_string_tabs + "<OPERAND>" + self.second_operand + "</OPERAND>\n"
         string_to_return = string_to_return + string_tabs + "</OP>\n"
         return string_to_return
