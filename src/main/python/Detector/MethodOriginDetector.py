@@ -6,6 +6,7 @@ class MethodOriginDetector:
     functions_list = {}
 
     def __init__(self, system_object):
+        self.functions_list = {}
         self.take_all_functions(system_object)
         self.detect_call_function_origin(system_object)
 
@@ -49,8 +50,8 @@ class MethodOriginDetector:
                     candidate_classes = list()
                     for class_of_function_list in self.functions_list:
                         for function_of_class in self.functions_list[class_of_function_list]:
-                            if function_of_class == function.get_return_object().get_argument() \
-                                    .get_method_name().removeprefix("."):
+                            if function_of_class == str(function.get_return_object().get_argument() \
+                                    .get_method_name()).removeprefix("."):
                                 candidate_classes.append(class_of_function_list)
                     if 0 < len(candidate_classes) < 2:
                         function.get_return_object().get_argument().set_original_class_name(candidate_classes[0])

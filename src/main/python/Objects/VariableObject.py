@@ -38,12 +38,12 @@ class VariableObject:
         return self.argument
 
     def __str__(self):
-        return self.variable_name
+        return str(self.variable_name)
 
     def abstract_syntax_tree(self, number_of_tabs):
         string_tabs = (number_of_tabs + 1) * "\t"
         internal_string_tabs = string_tabs + "\t"
-        string_to_return = string_tabs + "<VARIABLE>(id," + self.variable_name + ")"
+        string_to_return = string_tabs + "<VARIABLE>(id," + str(self.variable_name) + ")"
         if self.type != "":
             string_to_return = string_to_return + "\n" + internal_string_tabs + "<TYPE>" + self.type + "</TYPE>"
             if self.argument == "":

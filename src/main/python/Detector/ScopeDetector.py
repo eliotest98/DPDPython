@@ -5,6 +5,7 @@ class ScopeDetector:
     variable_scope = {}
 
     def __init__(self, system_object):
+        self.variable_scope = {}
         self.get_all_variables(system_object)
         self.detect_scope(system_object)
 

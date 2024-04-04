@@ -25,6 +25,7 @@ class MatrixContainer:
         self.invoked_method_in_inherited_method_matrix = pd.DataFrame([[0, 0], [0, 0]])
         self.double_dispatch_matrix = pd.DataFrame([[0, 0], [0, 0]])
         self.double_dispatch_behavioral_data = BehavioralData()
+        self.method_invocations_matrix = pd.DataFrame([[0, 0], [0, 0]])
 
     def set_class_name_list(self, class_name_list):
         self.class_name_list = class_name_list

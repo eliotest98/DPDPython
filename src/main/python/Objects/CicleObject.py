@@ -19,6 +19,9 @@ class CicleObject:
     def add_instruction(self, instruction):
         self.instructions_list.append(instruction)
 
+    def __str__(self):
+        return str(self.condition)
+
     def abstract_syntax_tree(self, number_of_tabs):
         string_tabs = (number_of_tabs + 1) * "\t"
         internal_string_tabs = string_tabs + "\t"

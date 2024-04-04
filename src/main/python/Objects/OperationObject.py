@@ -48,6 +48,6 @@ class OperationObject:
                 string_to_return = string_to_return + internal_string_tabs + "<OPERAND>\n" + self.second_operand.abstract_syntax_tree(
                     number_of_tabs + 2) + "\n" + internal_string_tabs + "</OPERAND>\n"
             else:
-                string_to_return = string_to_return + internal_string_tabs + "<OPERAND>" + self.second_operand + "</OPERAND>\n"
+                string_to_return = string_to_return + internal_string_tabs + "<OPERAND>" + str(self.second_operand) + "</OPERAND>\n"
         string_to_return = string_to_return + string_tabs + "</OP>\n"
         return string_to_return

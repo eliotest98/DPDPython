@@ -7,6 +7,7 @@ class HierarchyDetection:
     hierarchy_list = list()
 
     def __init__(self, system_object):
+        self.hierarchy_list = list()
         # Is a way to define a hereditary class
         self.hierarchy_list = self.get_superclass_hierarchy_list(system_object)
         self.get_non_inheriting_classes(system_object)
@@ -39,6 +40,10 @@ class HierarchyDetection:
                     if len(class_object.get_superclass_list()) != 0:
                         child_hierarchy = self.get_hierarchy(superclass_list, key)
                         for parent in class_object.get_superclass_list():
+                            if parent.__contains__(":"):
+                                split = parent.split(":")
+                                if split[0] == "Import":
+                                    continue
                             parent_hierarchy = self.get_hierarchy(superclass_list, parent)
                             if child_hierarchy is None and parent_hierarchy is None:
                                 ih = InheritanceHierarchy()

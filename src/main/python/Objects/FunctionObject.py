@@ -1,7 +1,5 @@
 from Objects.CallFunctionObject import CallFunctionObject
 from Objects.ReturnObject import ReturnObject
-from Objects.VariableObject import VariableObject
-
 
 # This class represent the function instance
 # A function is formed from:
@@ -11,6 +9,7 @@ from Objects.VariableObject import VariableObject
 # - imports
 # - instructions
 # - lambdas
+# - rest api
 # - return value
 class FunctionObject:
     function_name = ""
@@ -19,6 +18,7 @@ class FunctionObject:
     import_list = list()
     instruction_list = list()
     lamda_list = list()
+    rest_api_list = list()
     return_object = ReturnObject()
 
     def __init__(self):
@@ -28,6 +28,7 @@ class FunctionObject:
         self.instruction_list = list()
         self.import_list = list()
         self.lamda_list = list()
+        self.rest_api_list = list()
         self.return_object = ReturnObject()
 
     def set_function_name(self, function_name):
@@ -72,10 +73,18 @@ class FunctionObject:
     def add_lambda_function(self, function_object):
         self.lamda_list.append(function_object)
 
+    def add_rest_api(self, call_function_object):
+        self.rest_api_list.append(call_function_object)
+
     def abstract_syntax_tree(self, number_of_tabs):
         string_tabs = (number_of_tabs + 1) * "\t"
         internal_string_tabs = string_tabs + "\t"
         string_to_return = string_tabs + "<FUNCTION_DECLARATION>(id," + self.function_name + ")\n"
+        if len(self.rest_api_list) != 0:
+            string_to_return = string_to_return + internal_string_tabs + "<REST_API>\n"
+            for rest_invoke in self.rest_api_list:
+                string_to_return = string_to_return + rest_invoke.abstract_syntax_tree(number_of_tabs + 2) + "\n"
+            string_to_return = string_to_return + internal_string_tabs + "</REST_API>\n"
         if len(self.import_list) != 0:
             string_to_return = string_to_return + internal_string_tabs + "<IMPORT_LIST>\n"
             for import_ in self.import_list:

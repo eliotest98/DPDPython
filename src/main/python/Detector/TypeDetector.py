@@ -10,6 +10,8 @@ class TypeDetector:
     imports_detector = ""
 
     def __init__(self, system_object):
+        self.variable_scope = {}
+        self.imports_detector = ""
         self.imports_detector = ImportsDetector(system_object)
         self.detect_type_with_call_functions(system_object)
         self.detect_type_of_variables_classes(system_object)

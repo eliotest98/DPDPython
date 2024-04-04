@@ -1,4 +1,6 @@
-from bytecode import Label, bytecode
+import collections.abc
+
+from bytecode import Label, bytecode, Instr
 
 from Objects.CallFunctionObject import CallFunctionObject
 from Objects.CicleObject import CicleObject
@@ -186,23 +188,15 @@ class ClassReader:
                 # CallMethod -> LOAD_NAME LOAD_ATTR LOAD_METHOD CALL_METHOD
                 case "CALL_METHOD":
 
-                    if by[i + 1].name != "LOAD_METHOD":
-                        i = i + 1
-                        continue
-
-                    previous_instruction = list()
-                    count = i - 1
-                    previous_instruction.append(instruction)
-                    while by[count].name != "POP_TOP" and by[count].name != "NOP" and by[count].name != "STORE_NAME":
-                        previous_instruction.append(by[count])
-                        count = count - 1
+                    copy = by[:i + 1]
+                    copy.reverse()
+                    return_values = self.arguments_instructions(copy)
 
                     # Create a call function object
                     call_function = CallFunctionObject()
 
                     call_function_reader = CallFunctionReader()
-                    call_function_reader.read_call_function(call_function, previous_instruction, debug_active)
-
+                    call_function_reader.read_call_function(call_function, return_values[0], debug_active)
                     # Add the call function at instructions of file object
                     class_object.add_instruction(call_function)
 
@@ -402,6 +396,20 @@ class ClassReader:
 
                         variable_object.set_argument(call_function)
                         variable_object.set_type("CallMethod")
+                    elif previous_instructions[0].name == "BINARY_SUBSCR":
+                        copy = by[:i]
+                        copy.reverse()
+                        return_values = self.arguments_instructions(copy)
+                        return_values = self.recursive_identification(return_values[0])
+                        variable_object.set_argument(return_values[0])
+                        variable_object.set_type("variable")
+                    elif previous_instructions[0].name == "LOAD_ATTR":
+                        copy = by[:i]
+                        copy.reverse()
+                        return_values = self.arguments_instructions(copy)
+                        return_values = self.recursive_identification(return_values[0])
+                        variable_object.set_argument(return_values[0])
+                        variable_object.set_type("variable")
                     else:
                         print("STORE_SUBSCR Not registered Class Reader")
                         print(previous_instructions[0])
@@ -507,43 +515,43 @@ class ClassReader:
                         class_object.add_instruction(variable)
                     # Variable -> CallFunction STORE_FAST
                     elif previous_instructions[0].name == "CALL_FUNCTION":
-                        previous_instructions.append(by[i - 2])
-                        previous_instructions.append(by[i - 3])
-                        previous_instructions.append(by[i - 4])
-                        previous_instructions.append(by[i - 5])
-                        previous_instructions.append(by[i - 6])
-                        previous_instructions.reverse()
+                        copy = by[:i]
+                        copy.reverse()
+                        return_values = self.arguments_instructions(copy)
 
-                        if isinstance(previous_instructions[1].arg, str):
-                            previous_instruction = list()
-                            count = i - 1
-                            previous_instruction.append(instruction)
-                            while by[count].name != "POP_TOP" and by[count].name != "NOP" and by[
-                                count].name != "STORE_NAME":
-                                previous_instruction.append(by[count])
-                                count = count - 1
+                        copy = return_values[0].copy()
 
+                        what = "CallFunction"
+                        while len(copy) != 0:
+                            try:
+                                if copy[0].name == "MAKE_FUNCTION":
+                                    what = "Function"
+                                elif copy[0].name == "LOAD_BUILD_CLASS":
+                                    what = "Class"
+                                elif copy[0].name == "GET_ITER":
+                                    what = "Cicle"
+                                    break
+                            except:
+                                pass
+                            copy.remove(copy[0])
+
+                        # In this case is a function with rest api
+                        # P.S. rest api skipped
+                        if what == "Function":
+                            copy = return_values[0].copy()
+                            while len(copy) != 0:
+                                if copy[0].name == "MAKE_FUNCTION":
+                                    break
+                                else:
+                                    copy.remove(copy[0])
+                            return_values = self.recursive_identification(copy)
+                            class_object.add_function(return_values[0])
+                        # In this case is a Cicle
+                        elif what == "Cicle":
                             # Create a call function object
                             call_function = CallFunctionObject()
-
                             call_function_reader = CallFunctionReader()
-                            call_function_reader.read_call_function(call_function, previous_instruction, debug_active)
-
-                            # Create a variable object
-                            variable = VariableObject()
-                            variable.set_variable_name(instruction.arg)
-                            variable.set_argument(call_function)
-                            variable.set_type("CallFunction")
-
-                            # Add the call function at instructions of file object
-                            class_object.add_instruction(variable)
-
-                        # In this other case is a call function
-                        if previous_instructions[1].name == "GET_ITER":
-                            # Create a call function object
-                            call_function = CallFunctionObject()
-                            call_function_reader = CallFunctionReader()
-                            call_function_reader.read_call_function(call_function, previous_instructions, debug_active)
+                            call_function_reader.read_call_function(call_function, return_values[0], debug_active)
 
                             # Create a variable object
                             variable = VariableObject()
@@ -555,6 +563,18 @@ class ClassReader:
                             class_object.add_instruction(variable)
 
                             i = i + 1
+                        # In this case is a Call Function
+                        else:
+                            call_function = CallFunctionObject()
+                            call_function_reader = CallFunctionReader()
+                            call_function_reader.read_call_function(call_function, return_values[0], debug_active)
+                            # Create a variable object
+                            variable = VariableObject()
+                            variable.set_variable_name(instruction.arg)
+                            variable.set_argument(call_function)
+                            variable.set_type("CallFunction")
+                            # Add the call function at instructions of file object
+                            class_object.add_instruction(variable)
                     # Import -> LOAD_CONST LOAD_CONST IMPORT_NAME STORE_NAME
                     elif previous_instructions[0].name == "IMPORT_NAME":
                         previous_instructions.append(by[i - 2])
@@ -592,8 +612,15 @@ class ClassReader:
                         # The current instruction contains the name of function
                         function.set_function_name(instruction.arg)
 
+                        # if there is a Label is a Function
+                        if isinstance(previous_instructions[0], Label):
+                            # Get the bytecode of internal function
+                            new_byte = bytecode.Bytecode.from_code(previous_instructions[1].arg)
+                            # Start a function reader for read the internal function
+                            function_reader = FunctionReader()
+                            function_reader.read_function(function, new_byte, debug_active)
                         # Function -> LOAD_CONST Function
-                        if previous_instructions[0].name == "LOAD_CONST":
+                        elif previous_instructions[0].name == "LOAD_CONST":
                             # Get the bytecode of internal function
                             new_byte = bytecode.Bytecode.from_code(previous_instructions[1].arg)
                             # Start a function reader for read the internal function
@@ -622,9 +649,38 @@ class ClassReader:
 
                         # Add the function at file object
                         class_object.add_function(function)
+                    elif previous_instructions[0].name == "DUP_TOP":
+                        # Skip...
+                        i = i + 1
+                        continue
+                    elif previous_instructions[0].name == "LOAD_ATTR":
+                        copy = by[:i]
+                        copy.reverse()
+                        return_values = self.arguments_instructions(copy)
+                        return_values = self.recursive_identification(return_values[0])
+                        # Create a variable object
+                        variable = VariableObject()
+                        # The current instruction contains the name of variable
+                        variable.set_variable_name(instruction.arg)
+                        variable.set_type("variable")
+                        variable.set_argument(return_values[0])
+                        # Add the variable at variables list:
+                        class_object.add_variable(variable)
+                    elif previous_instructions[0].name == "BUILD_LIST":
+                        copy = by[:i]
+                        copy.reverse()
+                        return_values = self.arguments_instructions(copy)
+                        return_values = self.recursive_identification(return_values[0])
+                        # Create a variable object
+                        variable = VariableObject()
+                        # The current instruction contains the name of variable
+                        variable.set_variable_name(instruction.arg)
+                        variable.set_type("variable")
+                        variable.set_argument(return_values[0])
+                        # Add the variable at variables list:
+                        class_object.add_variable(variable)
                     else:
                         print("STORE_NAME Not registered")
-                        print(instruction)
                         print(previous_instructions[0])
 
             i = i + 1
@@ -633,3 +689,619 @@ class ClassReader:
                 print("Cicle Body End Reading\n")
             else:
                 print(class_object.class_name + " End Class Reading\n")
+
+    def recursive_identification(self, by):
+        counter = 0
+        if isinstance(by, collections.abc.Sequence):
+            if by[counter].name == "LOAD_CONST":
+                value = by[counter].arg
+                counter = counter + 1
+                return value, by[counter:]
+            elif by[counter].name == "LOAD_NAME":
+                value = by[counter].arg
+                counter = counter + 1
+                return value, by[counter:]
+            elif by[counter].name == "LOAD_ATTR":
+                second_value = by[counter].arg
+                counter = counter + 1
+                return_values = self.recursive_identification(by[counter:])
+                first_value = return_values[0]
+                by = return_values[1]
+                counter = 0
+                return str(first_value) + "." + str(second_value), by[counter:]
+            elif by[counter].name == "BINARY_SUBSCR":
+                counter = counter + 1
+                return_values = self.recursive_identification(by[counter:])
+                value_internal = return_values[0]
+                by = return_values[1]
+                counter = 0
+                return_values = self.recursive_identification(by[counter:])
+                path = return_values[0]
+                by = return_values[1]
+                counter = 0
+                return str(path) + "[" + str(value_internal) + "]", by[counter:]
+            elif by[counter].name == "BINARY_SUBTRACT":
+                counter = counter + 1
+
+                # First Operand
+                return_values = self.recursive_identification(by[counter:])
+                by = return_values[1]
+                counter = 0
+                subtract = " - " + str(return_values[0])
+
+                # Second Operand
+                return_values = self.recursive_identification(by[counter:])
+                by = return_values[1]
+                counter = 0
+                subtract = str(return_values[0]) + subtract
+
+                return subtract, by[counter:]
+            elif by[counter].name == "BINARY_ADD":
+                counter = counter + 1
+
+                # First Operand
+                return_values = self.recursive_identification(by[counter:])
+                by = return_values[1]
+                counter = 0
+                sum = " + " + str(return_values[0])
+
+                # Second Operand
+                return_values = self.recursive_identification(by[counter:])
+                by = return_values[1]
+                counter = 0
+                sum = str(return_values[0]) + sum
+
+                return sum, by[counter:]
+            elif by[counter].name == "CALL_METHOD":
+                number_of_arguments = by[counter].arg
+                counter_arguments = 0
+                counter = counter + 1
+
+                # Create a call function Object
+                call_function = CallFunctionObject()
+
+                # Parameters
+                while counter_arguments < number_of_arguments:
+                    return_values = self.recursive_identification(by[counter:])
+                    call_function.add_parameter(return_values[0])
+                    by = return_values[1]
+                    counter = 0
+                    counter_arguments = counter_arguments + 1
+
+                # Name of method
+                # TODO i don't know if is forever
+                if by[counter].name == "LOAD_METHOD":
+                    return_values = self.recursive_identification(by[counter:])
+                    call_function.set_method_name("." + return_values[0])
+                    by = return_values[1]
+                    counter = 0
+                else:
+                    print("LOAD_METHOD not forever")
+                    print(by)
+                    exit(-1)
+
+                # Path of method
+                return_values = self.recursive_identification(by[counter:])
+                path = call_function.path
+                if path == "":
+                    path = str(return_values[0])
+                else:
+                    if path.endswith("."):
+                        path = path + str(return_values[0])
+                    else:
+                        path = path + "." + str(return_values[0])
+                call_function.set_path(path)
+                by = return_values[1]
+                counter = 0
+                return call_function, by[counter:]
+            elif by[counter].name == "CALL_FUNCTION":
+                number_of_arguments = by[counter].arg
+                counter_arguments = 0
+                counter = counter + 1
+
+                # Create a call function Object
+                call_function = CallFunctionObject()
+
+                # Parameters
+                while counter_arguments < number_of_arguments:
+                    return_values = self.recursive_identification(by[counter:])
+                    if isinstance(return_values[0], FunctionObject):
+                        function_object = return_values[0]
+                    else:
+                        call_function.add_parameter(return_values[0])
+                    by = return_values[1]
+                    counter = 0
+                    counter_arguments = counter_arguments + 1
+
+                return_values = self.recursive_identification(by[counter:])
+                call_function.set_method_name(return_values[0])
+                by = return_values[1]
+                counter = 0
+                return call_function, by[counter:]
+            elif by[counter].name == "CALL_FUNCTION_KW":
+                number_of_arguments = by[counter].arg
+                counter_arguments = 0
+                counter = counter + 1
+
+                list_arguments = by[counter].arg
+                counter = counter + 1
+
+                # Create a call function Object
+                call_function = CallFunctionObject()
+
+                # Parameters
+                while counter_arguments < number_of_arguments:
+                    return_values = self.recursive_identification(by[counter:])
+                    parameter = return_values[0]
+                    if parameter is None:
+                        parameter = "None"
+                    try:
+                        parameter = list_arguments[counter_arguments] + " = " + str(parameter)
+                    except IndexError:
+                        parameter = str(return_values[0])
+                    call_function.add_parameter(parameter)
+                    by = return_values[1]
+                    counter = 0
+                    counter_arguments = counter_arguments + 1
+
+                return_values = self.recursive_identification(by[counter:])
+                call_function.set_method_name(return_values[0])
+                by = return_values[1]
+                counter = 0
+                return call_function, by[counter:]
+            elif by[counter].name == "LOAD_METHOD":
+                value = by[counter].arg
+                counter = counter + 1
+                return value, by[counter:]
+            elif by[counter].name == "BUILD_LIST":
+                number_of_elements = by[counter].arg
+                counter = counter + 1
+                arguments_counter = 0
+                arguments = ""
+                while arguments_counter < number_of_elements:
+                    return_values = self.recursive_identification(by[counter:])
+                    by = return_values[1]
+                    counter = 0
+                    arguments = arguments + str(return_values[0]) + ","
+                    arguments_counter = arguments_counter + 1
+
+                return arguments.removesuffix(","), by[counter:]
+            elif by[counter].name == "BUILD_CONST_KEY_MAP":
+                number_of_arguments = by[counter].arg
+                counter = counter + 1
+                return_values = self.recursive_identification(by[counter:])
+                arguments_list = return_values[0]
+                by = return_values[1]
+                counter = 0
+                counter_arguments = 0
+                raw_map = "{"
+                while counter_arguments < number_of_arguments:
+                    return_values = self.recursive_identification(by[counter:])
+                    raw_map = raw_map + arguments_list[counter_arguments] + ":" + str(return_values[0]) + ","
+                    by = return_values[1]
+                    counter = 0
+                    counter_arguments = counter_arguments + 1
+                raw_map = raw_map.removesuffix(",") + "}"
+                return raw_map, by[counter:]
+            elif by[counter].name == "INPLACE_ADD":
+                counter = counter + 1
+                return_values = self.recursive_identification(by[counter:])
+                value = return_values[0]
+                by = return_values[1]
+                counter = 0
+                return value, by[counter:]
+            elif by[counter].name.__contains__("_OP"):
+                operation_name = str(by[counter].arg)
+                if not operation_name.__contains__("."):
+                    operation_name = by[counter].name.removesuffix("_OP").lower().capitalize()
+                operation_object = OperationObject()
+                operation_object.set_operation_type(operation_name)
+                counter = counter + 1
+                # First Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_first_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                # Second Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_second_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                return operation_object, by[counter:]
+            elif by[counter].name == "MAKE_FUNCTION":
+                # Jumping informations....
+                counter = counter + 1
+                return_values = self.recursive_identification(by[counter:])
+                by = return_values[1]
+                counter = 0
+                function_object = FunctionObject()
+                function_object.set_function_name(return_values[0])
+                if isinstance(by[counter], Instr):
+                    internal_bytecode = bytecode.Bytecode.from_code(by[counter].arg)
+                else:
+                    internal_bytecode = bytecode.Bytecode.from_code(by[counter])
+                function_reader = FunctionReader()
+                function_reader.read_function(function_object, internal_bytecode, 0)
+                counter = counter + 1
+                return function_object, by[counter:]
+            else:
+                print("Recursive identification not registered File Reader")
+                print(by[counter])
+                exit(-1)
+        else:
+            if by.name == "LOAD_FAST":
+                value = by.arg
+                variable = VariableObject()
+                variable.set_variable_name(value)
+                variable.set_type("variable")
+                return variable, []
+            elif by.name == "LOAD_NAME":
+                value = by.arg
+                variable = VariableObject()
+                variable.set_variable_name(value)
+                variable.set_type("variable")
+                return variable, []
+            elif by.name == "LOAD_CONST":
+                value = by.arg
+                variable = VariableObject()
+                variable.set_variable_name(value)
+                variable.set_type("variable")
+                return value, []
+            else:
+                print("Recursive identification not registered File Reader Single")
+                print(by)
+                exit(-1)
+
+    # return_values[0] = instruction/instruction list return_values[1] = bytecode modified
+    def arguments_instructions(self, by):
+        counter = 0
+        if by[counter].name == "LOAD_CONST" or by[counter].name == "LOAD_FAST" or by[counter].name == "LOAD_GLOBAL" \
+                or by[counter].name == "LOAD_METHOD" or by[counter].name == "STORE_FAST" \
+                or by[counter].name == "LOAD_NAME" or by[counter].name == "LOAD_BUILD_CLASS" \
+                or by[counter].name == "STORE_NAME":
+            value = by[counter]
+            counter = counter + 1
+            return value, by[counter:]
+        elif by[counter].name == "LOAD_ATTR":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            counter = counter + 1
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            return instruction_list, by[counter:]
+        elif by[counter].name == "BUILD_MAP":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            number_of_arguments = by[counter].arg
+            counter = counter + 1
+            arguments_counter = 0
+            while arguments_counter < number_of_arguments:
+                # Value
+                return_values = self.arguments_instructions(by[counter:])
+                try:
+                    instruction_list.extend(return_values[0])
+                except TypeError:
+                    instruction_list.append(return_values[0])
+                by = return_values[1]
+                counter = 0
+                # Key
+                return_values = self.arguments_instructions(by[counter:])
+                try:
+                    instruction_list.extend(return_values[0])
+                except TypeError:
+                    instruction_list.append(return_values[0])
+                by = return_values[1]
+                counter = 0
+                arguments_counter = arguments_counter + 1
+            return instruction_list, by[counter:]
+        elif by[counter].name == "CALL_FUNCTION_KW":
+            instruction_list = list()
+            number_of_arguments = by[counter].arg
+            instruction_list.append(by[counter])
+            counter = counter + 1
+            # Parameters List
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+
+            counter_arguments = 0
+            # Parameters
+            while counter_arguments < number_of_arguments:
+                return_values = self.arguments_instructions(by[counter:])
+                try:
+                    instruction_list.extend(return_values[0])
+                except TypeError:
+                    instruction_list.append(return_values[0])
+
+                by = return_values[1]
+                counter = 0
+                counter_arguments = counter_arguments + 1
+
+            # Function Name
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+
+            return instruction_list, by[counter:]
+        elif by[counter].name == "BINARY_SUBSCR" or by[counter].name == "BINARY_ADD" \
+                or by[counter].name == "BINARY_SUBTRACT" or by[counter].name == "BINARY_AND":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            counter = counter + 1
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            return instruction_list, by[counter:]
+        elif by[counter].name == "GET_ITER":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            counter = counter + 1
+
+            # Condition
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+
+            # Body
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            return instruction_list, by[counter:]
+        elif by[counter].name == "CALL_METHOD":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            number_of_arguments = by[counter].arg
+            counter_arguments = 0
+            counter = counter + 1
+
+            # Parameters
+            while counter_arguments < number_of_arguments:
+                return_values = self.arguments_instructions(by[counter:])
+                try:
+                    instruction_list.extend(return_values[0])
+                except TypeError:
+                    instruction_list.append(return_values[0])
+                by = return_values[1]
+                counter = 0
+                counter_arguments = counter_arguments + 1
+
+            # Name of method
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+
+            # Path of method
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            return instruction_list, by[counter:]
+        elif by[counter].name == "CALL_FUNCTION":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            number_of_arguments = by[counter].arg
+            counter_arguments = 0
+            counter = counter + 1
+
+            # Parameters
+            while counter_arguments < number_of_arguments:
+                return_values = self.arguments_instructions(by[counter:])
+                try:
+                    instruction_list.extend(return_values[0])
+                except TypeError:
+                    instruction_list.append(return_values[0])
+                by = return_values[1]
+                counter = 0
+                counter_arguments = counter_arguments + 1
+
+            instructions = by[counter:]
+            if len(instructions) != 0:
+                return_values = self.arguments_instructions(instructions)
+                try:
+                    instruction_list.extend(return_values[0])
+                except TypeError:
+                    instruction_list.append(return_values[0])
+                by = return_values[1]
+                counter = 0
+            return instruction_list, by[counter:]
+        elif by[counter].name == "BUILD_LIST":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            number_of_elements = by[counter].arg
+            counter = counter + 1
+            arguments_counter = 0
+            while arguments_counter < number_of_elements:
+                return_values = self.arguments_instructions(by[counter:])
+                try:
+                    instruction_list.extend(return_values[0])
+                except TypeError:
+                    instruction_list.append(return_values[0])
+                by = return_values[1]
+                counter = 0
+                arguments_counter = arguments_counter + 1
+
+            return instruction_list, by[counter:]
+        elif by[counter].name == "MAKE_FUNCTION":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            counter = counter + 1
+
+            # Function Name
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+
+            # Bytecode
+            instruction_list.append(by[counter].arg)
+            counter = counter + 1
+            return instruction_list, by[counter:]
+        elif by[counter].name.__contains__("_OP"):
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            counter = counter + 1
+            # First Operand
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            # Second Operand
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            return instruction_list, by[counter:]
+        elif by[counter].name == "STORE_SUBSCR":
+            instruction_list = list()
+            # Current Instruction
+            instruction_list.append(by[counter])
+            counter = counter + 1
+
+            # Variable Left Part
+
+            # LOAD_CONST Instruction
+            instruction_list.append(by[counter])
+            counter = counter + 1
+            # LOAD_NAME Instruction
+            instruction_list.append(by[counter])
+            counter = counter + 1
+
+            # Variable Right Part
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            return instruction_list, by[counter:]
+        elif by[counter].name == "LIST_EXTEND":
+            instruction_list = list()
+            number_of_arguments = by[counter].arg
+            instruction_list.append(by[counter])
+            counter = counter + 1
+            counter_arguments = 0
+            # Arguments
+            while counter_arguments < number_of_arguments:
+                return_values = self.arguments_instructions(by[counter:])
+                try:
+                    instruction_list.extend(return_values[0])
+                except TypeError:
+                    instruction_list.append(return_values[0])
+                by = return_values[1]
+                counter = 0
+                counter_arguments = counter_arguments + 1
+
+            # BUILD_LIST instruction
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            return instruction_list, by[counter:]
+        elif by[counter].name == "BUILD_CONST_KEY_MAP":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            number_of_arguments = by[counter].arg
+            counter = counter + 1
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            counter_arguments = 0
+            while counter_arguments < number_of_arguments:
+                return_values = self.arguments_instructions(by[counter:])
+                try:
+                    instruction_list.extend(return_values[0])
+                except TypeError:
+                    instruction_list.append(return_values[0])
+                by = return_values[1]
+                counter = 0
+                counter_arguments = counter_arguments + 1
+            return instruction_list, by[counter:]
+        elif by[counter].name == "INPLACE_ADD":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            counter = counter + 1
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            return instruction_list, by[counter:]
+        elif by[counter].name == "BUILD_TUPLE":
+            instruction_list = list()
+            number_of_arguments = by[counter].arg
+            instruction_list.append(by[counter])
+            counter = counter + 1
+            arguments_counter = 0
+            while arguments_counter < number_of_arguments:
+                return_values = self.arguments_instructions(by[counter:])
+                try:
+                    instruction_list.extend(return_values[0])
+                except TypeError:
+                    instruction_list.append(return_values[0])
+                by = return_values[1]
+                counter = 0
+                arguments_counter = arguments_counter + 1
+
+            return instruction_list, by[counter:]
+        else:
+            print("Arguments instructions not registered Class Reader")
+            print(by[counter])
+            exit(-1)

@@ -87,12 +87,12 @@ class ReadBytecode:
         try:
             os.makedirs(save_directory)
         except OSError as error:
-            print()
+            pass
 
         if save_directory.__contains__("__pycache__"):
             save_directory = save_directory.replace("\\__pycache__", "")
         # Write on a file the Abstract Syntax Tree
-        with open(save_directory + "\\" + file_name.replace(".py", "") + ".xml", "w") as f:
+        with open(save_directory + "\\" + file_name.replace(".py", "") + ".xml", "w", encoding='utf-8') as f:
             f.write(ast)
 
     def get_system_object(self):

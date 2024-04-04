@@ -1,3 +1,5 @@
+from bytecode import FreeVar, CellVar
+
 from Objects.CallFunctionObject import CallFunctionObject
 from Objects.ExceptionObject import ExceptionObject
 from Objects.OperationObject import OperationObject
@@ -57,6 +59,8 @@ class IfObject:
                     if isinstance(instruction, CallFunctionObject):
                         string_to_return = string_to_return + instruction.abstract_syntax_tree(
                             number_of_tabs + 1) + "\n"
+                    elif isinstance(instruction, str):
+                        string_to_return = string_to_return + instruction + "\n"
                     else:
                         string_to_return = string_to_return + instruction.abstract_syntax_tree(
                             number_of_tabs + 2) + "\n"
@@ -67,6 +71,32 @@ class IfObject:
                     if isinstance(instruction, CallFunctionObject):
                         string_to_return = string_to_return + instruction.abstract_syntax_tree(
                             number_of_tabs + 1) + "\n"
+                    else:
+                        string_to_return = string_to_return + instruction.abstract_syntax_tree(
+                            number_of_tabs + 2) + "\n"
+                string_to_return = string_to_return + internal_string_tabs + "</INSTRUCTION_LIST_IF_FALSE>\n"
+            string_to_return = string_to_return + string_tabs + "</IF>"
+        elif isinstance(self.operation_object, (str, FreeVar, CellVar)):
+            string_to_return = string_tabs + "<IF>\n"
+            string_to_return = string_to_return + internal_string_tabs + str(self.operation_object)
+            if len(self.instruction_list_if_true) != 0:
+                string_to_return = string_to_return + internal_string_tabs + "<INSTRUCTION_LIST_IF_TRUE>\n"
+                for instruction in self.instruction_list_if_true:
+                    if isinstance(instruction, CallFunctionObject):
+                        string_to_return = string_to_return + instruction.abstract_syntax_tree(
+                            number_of_tabs + 1) + "\n"
+                    else:
+                        string_to_return = string_to_return + instruction.abstract_syntax_tree(
+                            number_of_tabs + 2) + "\n"
+                string_to_return = string_to_return + internal_string_tabs + "</INSTRUCTION_LIST_IF_TRUE>\n"
+            if len(self.instruction_list_if_false) != 0:
+                string_to_return = string_to_return + internal_string_tabs + "<INSTRUCTION_LIST_IF_FALSE>\n"
+                for instruction in self.instruction_list_if_false:
+                    if isinstance(instruction, CallFunctionObject):
+                        string_to_return = string_to_return + instruction.abstract_syntax_tree(
+                            number_of_tabs + 1) + "\n"
+                    elif isinstance(instruction, str):
+                        string_to_return = string_to_return + instruction + "\n"
                     else:
                         string_to_return = string_to_return + instruction.abstract_syntax_tree(
                             number_of_tabs + 2) + "\n"

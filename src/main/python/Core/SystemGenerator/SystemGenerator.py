@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pandas.core.series
 
 from Core.SystemGenerator.Hierarchy.HierarchyDetection import HierarchyDetection
 from Core.SystemGenerator.Hierarchy.InheritanceHierarchy import InheritanceHierarchy
@@ -18,6 +19,7 @@ class SystemGenerator:
     def __init__(self, system_object):
         self.system_object = system_object
         self.matrix_container = MatrixContainer()
+        self.hierarchy_list = list()
         self.hierarchy_list = HierarchyDetection(system_object).get_hierarchy_list()
 
         self.matrix_container.set_class_name_list(self.system_object.get_class_names())
@@ -110,9 +112,7 @@ class SystemGenerator:
             for fo in co.get_variables_list():
                 if isinstance(fo, VariableObject):
                     class_type = fo.get_type()
-                    if "[]" in class_type:
-                        # Type[] is an array of associations
-                        class_type = class_type[:-2]
+                    print(class_type)
                     pos = self.system_object.get_position_in_class_list(class_type)
                     if pos != -1 and counter != pos:
                         assoc_matrix[counter][pos] = 1
@@ -231,8 +231,9 @@ class SystemGenerator:
         actual_relations = 0
         if pattern.matrix_container.get_association_matrix() is not None:
             total_relations = total_relations + 1
-            if (self.matrix_container.get_association_matrix()[class_name1][class_name2] == 1 or
-                    self.matrix_container.get_association_matrix()[class_name2][class_name1] == 1):
+            first_boolean = self.matrix_container.get_association_matrix()[class_name1][class_name2] == 1
+            second_boolean = self.matrix_container.get_association_matrix()[class_name2][class_name1] == 1
+            if first_boolean or second_boolean:
                 actual_relations = actual_relations + 1
         # Repeat the above if block for each pattern matrix
         # ...

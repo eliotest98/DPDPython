@@ -2,6 +2,7 @@ class ImportsDetector:
     imports_list = {}
 
     def __init__(self, system_object):
+        self.imports_list = {}
         self.detect_all_imports(system_object)
 
     def detect_all_imports(self, system_object):

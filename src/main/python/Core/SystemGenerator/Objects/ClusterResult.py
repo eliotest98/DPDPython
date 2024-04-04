@@ -197,6 +197,12 @@ class ClusterResult:
 
 
 class Entry:
+    score = ""
+    role = ""
+    class_name = ""
+    position = ""
+    hash = ""
+
     def __init__(self, score, role, class_name, position):
         self.score = score
         self.role = role
@@ -241,9 +247,13 @@ class Entry:
 
 
 class EntryTuple:
+    relationship_score = 0
+    role_entries = list()
+    hash_code = 0
+
     def __init__(self):
         self.relationship_score = 0
-        self.role_entries = []
+        self.role_entries = list()
         self.hash_code = 0
 
     def get_relationship_score(self):

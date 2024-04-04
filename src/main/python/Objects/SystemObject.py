@@ -13,8 +13,14 @@ class SystemObject:
         key = c.get_class_name()
         if c.get_file_name() != "":
             key = c.get_file_name() + "." + key
-        self.class_name_map[key] = len(self.class_list)
-        self.class_list.append(c)
+
+        if key not in self.class_name_map:
+            self.class_name_map[key] = len(self.class_list)
+            self.class_list.append(c)
+        else:
+            # TODO there are some classes duplicated
+            # print("Class", key)
+            pass
 
     def get_class_object_with_class_name(self, class_name):
         pos = self.class_name_map.get(class_name)

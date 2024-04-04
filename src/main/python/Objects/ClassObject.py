@@ -19,12 +19,12 @@ from Objects.VariableObject import VariableObject
 class ClassObject:
     class_name = ""
     file_name = ""
-    superclass_list = list()
-    import_list = list()
     functions_list = list()
     constructor = FunctionObject()
     variables_list = list()
+    import_list = list()
     instructions_list = list()
+    superclass_list = list()
 
     def __init__(self):
         self.class_name = ""
@@ -44,6 +44,9 @@ class ClassObject:
 
     def add_function(self, function_object):
         self.functions_list.append(function_object)
+
+    def remove_function(self, function_object):
+        self.functions_list.remove(function_object)
 
     def get_functions_list(self):
         return self.functions_list
@@ -73,10 +76,14 @@ class ClassObject:
         return self.instructions_list
 
     def add_superclass(self, superclass_name):
-        self.superclass_list.append(superclass_name)
+        if superclass_name not in self.superclass_list:
+            self.superclass_list.append(superclass_name)
 
     def get_superclass_list(self):
         return self.superclass_list
+
+    def remove_superclass(self, superclass_name):
+        self.superclass_list.remove(superclass_name)
 
     def set_file_name(self, file_name):
         self.file_name = file_name
