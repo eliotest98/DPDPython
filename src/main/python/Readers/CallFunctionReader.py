@@ -87,7 +87,6 @@ class CallFunctionReader:
                             i = 0
                             count = count + 1
                             call_function_object.add_parameter(return_values[0])
-                            # TODO call_function_object.set_method_name(fun_name.arg)
                         elif by[i].name == "CALL_FUNCTION_KW":
                             return_values = self.recursive_identification(by[i:])
                             by = return_values[1]
@@ -298,7 +297,6 @@ class CallFunctionReader:
                             i = 0
                             count = count + 1
                             call_function_object.add_parameter(return_values[0])
-                            # TODO call_function_object.set_method_name(fun_name.arg)
                         elif by[i].name == "CALL_FUNCTION_KW":
                             return_values = self.recursive_identification(by[i:])
                             by = return_values[1]
@@ -462,7 +460,6 @@ class CallFunctionReader:
                             i = 0
                             count = count + 1
                             call_function_object.add_parameter(return_values[0])
-                            # TODO call_function_object.set_method_name(fun_name.arg)
                         # BodyFunction -> CallMethod
                         elif by[i].name == "CALL_METHOD":
                             # Create a Call Function Object
@@ -1142,7 +1139,6 @@ class CallFunctionReader:
             counter = 0
 
             arguments = arguments.removesuffix(",")
-            # TODO i don't know when use the arguments
             return return_values[0], by[counter:]
         elif by[counter].name == "UNARY_NEGATIVE":
             operation_name = "Unary Negative"

@@ -39,9 +39,15 @@ class GithubRepository:
             print("Directory not exist, downloading...")
             print("Repository: " + self.repository_url)
             if self.branch_name == "":
-                Repo.clone_from(self.repository_url, self.folder)
+                try:
+                    Repo.clone_from(self.repository_url, self.folder)
+                except:
+                    pass
             else:
-                Repo.clone_from(self.repository_url, self.folder, branch=self.branch_name)
+                try:
+                    Repo.clone_from(self.repository_url, self.folder, branch=self.branch_name)
+                except:
+                    pass
             print("Repository Downloaded!")
 
     def change_permissions(self):

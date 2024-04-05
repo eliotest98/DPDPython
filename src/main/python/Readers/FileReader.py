@@ -53,13 +53,11 @@ class FileReader:
                         if isinstance(by[i], Label):
                             i = i + 1
 
+                # This object not exist, for the purpose of the tool is not important
                 # With -> Condition SETUP_WITH<Label> InstructionList POP_BLOCK
                 case "SETUP_WITH":
                     raw_label = str(instruction.arg).removeprefix("<bytecode.instr.Label object at ").removesuffix(">")
                     i = i + 1
-
-                    # Create a with object
-                    # TODO
 
                     next_instructions = list()
                     jump_raw_label = ""
@@ -76,8 +74,6 @@ class FileReader:
                             next_instructions.append(by[i])
                             i = i + 1
 
-                    # TODO add the instructions at with object
-
                     next_instructions = list()
                     # Jump Label instruction
                     if isinstance(by[i], Label):
@@ -93,8 +89,6 @@ class FileReader:
                             if internal_raw_label == jump_raw_label:
                                 break
                             i = i + 1
-
-                    # TODO Add with at instructions list
 
                 # Exception -> SETUP_FINALLY<Label> InstructionList POP_BLOCK InstructionList <Label> POP_TOP POP_TOP
                 # POP_TOP InstructionList POP_EXCEPT InstructionList
@@ -802,9 +796,7 @@ class FileReader:
                             for instruction_part in copy:
                                 if instruction_part.name == "LOAD_NAME":
                                     class_object.add_superclass(instruction_part.arg)
-                                    copy.remove(instruction_part)
                                 elif instruction_part.name == "LOAD_CONST" and instruction_part.arg == instruction.arg:
-                                    copy.remove(instruction_part)
                                     break
 
                             raw_bytecode = ""
@@ -1315,7 +1307,6 @@ class FileReader:
                     counter_arguments = counter_arguments + 1
 
                 # Name of method
-                # TODO i don't know if is forever
                 if by[counter].name == "LOAD_METHOD":
                     return_values = self.recursive_identification(by[counter:])
                     call_function.set_method_name("." + return_values[0])
@@ -1752,6 +1743,8 @@ class FileReader:
                 counter = 0
                 counter_arguments = counter_arguments + 1
 
+            if len(by) == counter:
+                return [], []
             # Name of method
             return_values = self.arguments_instructions(by[counter:])
             try:

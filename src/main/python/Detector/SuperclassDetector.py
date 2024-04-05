@@ -83,16 +83,27 @@ class SuperclassDetector:
         for i in range(system_object.get_class_number()):
             class_object = system_object.get_class_object_with_position(i)
             if isinstance(class_object, ClassObject):
+                list_to_delete = list()
+                list_to_add = list()
                 for superclass in class_object.get_superclass_list():
                     key_found = ""
                     for key in self.functions_list_of_classes.keys():
-                        split = key.split(".")
-                        if split[len(split) - 1] == superclass:
+                        # split = key.split(".")
+                        # if split[len(split) - 1] == superclass:
+                        #     key_found = key
+                        #     break
+                        if key == superclass:
                             key_found = key
                             break
                     if key_found == "":
-                        class_object.remove_superclass(superclass)
-                        class_object.add_superclass("Import:" + superclass)
+                        list_to_delete.append(superclass)
+                        list_to_add.append("Import:" + superclass)
                     else:
-                        class_object.remove_superclass(superclass)
-                        class_object.add_superclass(key_found)
+                        list_to_delete.append(superclass)
+                        list_to_add.append(key_found)
+
+                for import_ in list_to_delete:
+                    class_object.remove_superclass(import_)
+
+                for import_ in list_to_add:
+                    class_object.add_superclass(import_)

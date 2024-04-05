@@ -464,7 +464,7 @@ class ClassReader:
                         variable = VariableObject()
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(previous_instructions[0].arg + ":" + previous_instructions[1].arg)
+                        variable.set_argument(str(previous_instructions[0].arg) + ":" + str(previous_instructions[1].arg))
                         variable.set_type("dictionary")
                         # Add the variable at variables list:
                         class_object.add_variable(variable)
@@ -769,7 +769,6 @@ class ClassReader:
                     counter_arguments = counter_arguments + 1
 
                 # Name of method
-                # TODO i don't know if is forever
                 if by[counter].name == "LOAD_METHOD":
                     return_values = self.recursive_identification(by[counter:])
                     call_function.set_method_name("." + return_values[0])

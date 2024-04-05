@@ -6,7 +6,6 @@ class AdapterPatternDescriptor(MatrixContainer):
     divisor_array = []
     method_role_name = ""
     field_role_name = ""
-    matrix_container = MatrixContainer()
 
     def __init__(self):
         super().__init__()
@@ -14,7 +13,6 @@ class AdapterPatternDescriptor(MatrixContainer):
         self.divisor_array = []
         self.method_role_name = ""
         self.field_role_name = ""
-        self.matrix_container = MatrixContainer()
 
     def set_number_of_hierarchies(self, number_of_hierarchies):
         self.number_of_hierarchies = number_of_hierarchies

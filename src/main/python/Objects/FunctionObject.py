@@ -116,3 +116,6 @@ class FunctionObject:
         string_to_return = string_to_return + self.return_object.abstract_syntax_tree(number_of_tabs + 1) + "\n"
         string_to_return = string_to_return + string_tabs + "</FUNCTION_DECLARATION>"
         return string_to_return
+
+    def get_signature(self):
+        return self.function_name + str(self.parameters_list) + " -> " + str(self.return_object)

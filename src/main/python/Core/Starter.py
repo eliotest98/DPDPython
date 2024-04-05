@@ -32,12 +32,23 @@ def execute(repository_owner, repository_name, branch_name, debug_active):
     bytecode.select_file(
         resource_directory + "\\GeneratedFiles\\DirectorySelected\\" + repository_owner + "\\" + repository_name + "\\" + "\\Source",
         resource_directory + "\\GeneratedFiles\\Oracles\\" + repository_owner + "\\" + repository_name)
-    repository.delete_reporitory()
+    # repository.delete_reporitory()
 
-    # Write on a file the Abstract Syntax Tree of all system
-    with open(resource_directory + "\\GeneratedFiles\\Oracles\\" +
-              repository_owner + "\\SystemObject.xml", "w", encoding='utf-8') as f:
-        f.write(bytecode.get_system_object().abstract_syntax_tree())
+    try:
+        # Write on a file the Abstract Syntax Tree of all system
+        with open(resource_directory + "\\GeneratedFiles\\Oracles\\" +
+                  repository_owner + "\\SystemObject.xml", "w", encoding='utf-8') as f:
+            f.write(bytecode.get_system_object().abstract_syntax_tree())
+    except FileNotFoundError:
+        # Create the directory if not exist
+        try:
+            os.makedirs(resource_directory + "\\GeneratedFiles\\Oracles\\" + repository_owner + "\\" + repository_name)
+        except OSError as error:
+            pass
+        # Write on a file the Abstract Syntax Tree of all system
+        with open(resource_directory + "\\GeneratedFiles\\Oracles\\" +
+                  repository_owner + "\\SystemObject.xml", "w", encoding='utf-8') as f:
+            f.write(bytecode.get_system_object().abstract_syntax_tree())
 
     #
     # Detectors
@@ -58,14 +69,17 @@ def execute(repository_owner, repository_name, branch_name, debug_active):
     # Design Pattern Detection
     #
     detection = DesignPatternDetection()
+    print("Generating System....")
     # Get informations from system object
     system_generator = SystemGenerator(bytecode.get_system_object())
+    print("Detection...")
     # Get hierarchy list of system analized
     hierarchy_list = system_generator.get_hierarchy_list()
     pattern_results = list()
     # Get the list of Design Patterns
     pattern_list = list(DesignPattern)
     for pattern in pattern_list:
+        print("Control Design Pattern: " + pattern.name)
         pattern_name = pattern.name
         pattern_result = PatternResult(pattern_name)
         # For now there is only one descriptor
@@ -86,6 +100,8 @@ def execute(repository_owner, repository_name, branch_name, debug_active):
                 # Detect of design pattern selected
                 detection.generate_results(hierarchies_matrix_container, pattern_descriptor, pattern_result)
         pattern_results.append(pattern_result)
+
+    print("End Detection")
 
     #
     # Results
@@ -182,12 +198,9 @@ def execute_niche(debug_active):
     niche_df = pd.read_excel(resource_directory + "/NICHE.xlsx")
     counter = 0
 
-    # TODO da chiedere al prof
-    #niche_df = niche_df[niche_df["Engineered ML Project"] == "Y"]
-
     # Engineered ML Project
     for repository in niche_df["GitHub Repo"]:
-        if counter == 4:
+        if counter == 10:
             break
         single_execution(repository, debug_active)
         counter = counter + 1
@@ -201,5 +214,5 @@ def single_execution(repository, debug_active):
 # execute("chensteven", "covidify", "project-structural-pattern", 0)
 # execute_test("AdapterExtended", 0)
 # execute_test("Adapter", 0)
-# execute_test("Test", 1)
+# execute_test("Test", 0)
 execute_niche(0)

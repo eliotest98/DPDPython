@@ -1,7 +1,5 @@
 import numpy as np
 import pandas as pd
-import pandas.core.series
-
 from Core.SystemGenerator.Hierarchy.HierarchyDetection import HierarchyDetection
 from Core.SystemGenerator.Hierarchy.InheritanceHierarchy import InheritanceHierarchy
 from Core.SystemGenerator.Objects.BehavioralData import BehavioralData
@@ -27,6 +25,7 @@ class SystemGenerator:
         self.matrix_container.set_association_matrix(self.get_association_matrix())
         self.association_with_inheritance_matrix()
         self.double_dispatch_matrix()
+        self.invoked_method_in_inherited_method_matrix()
         self.matrix_container.set_method_invocations_matrix(self.get_method_invocations_matrix())
 
     def get_method_invocations_matrix(self):
@@ -182,6 +181,51 @@ class SystemGenerator:
         self.matrix_container.set_double_dispatch_matrix(pd.DataFrame(m, index=labels, columns=labels))
         self.matrix_container.set_double_dispatch_behavioral_data(behavioral_data)
 
+    def invoked_method_in_inherited_method_matrix(self):
+        counter = 0
+        m = [[0 for _ in range(self.system_object.get_class_number())] for _ in
+             range(self.system_object.get_class_number())]
+        behavioral_data = BehavioralData()
+
+        labels = list()
+
+        for co in self.system_object.get_class_list_iterator():
+            # Create the key to use for unique class
+            key_co = co.get_class_name()
+            if co.get_file_name() != "":
+                key_co = co.get_file_name() + "." + key_co
+            labels.append(key_co)
+            # Get superclass list of specific class
+            for superclass in co.get_superclass_list():
+                # Control if exist the superclass in the list
+                pos = self.system_object.get_position_in_class_list(superclass)
+                if pos != -1:
+                    # Get the functions list of selected class object
+                    for fo in co.get_functions_list():
+                        # Get the instruction list
+                        for mio in fo.get_instructions_list():
+                            if isinstance(mio, CallFunctionObject):
+                                # Get the position of original class name
+                                pos2 = self.system_object.get_position_in_class_list(mio.get_original_class_name())
+                                if pos2 != -1 and key_co != mio.get_original_class_name() and \
+                                        co.has_field_type(mio.get_original_class_name()) and \
+                                        superclass == mio.get_original_class_name() and \
+                                        self.belong_in_same_hierarchy(key_co, mio.get_original_class_name()) and \
+                                        not fo.get_function_name() == "__init__":
+                                    fields = self.get_fields_of_class_accessed_in_method_calling_method_invocation(co,
+                                                                                                                   fo,
+                                                                                                                   mio)
+                                    if fields:
+                                        m[counter][pos2] = 1
+                                        behavioral_data.add_method(counter, pos2, fo)
+                                        for field in fields:
+                                            behavioral_data.add_field(counter, pos2, field)
+            counter += 1
+
+        self.matrix_container.set_invoked_method_in_inherited_method_matrix(
+            pd.DataFrame(m, index=labels, columns=labels))
+        self.matrix_container.set_invoked_method_in_inherited_method_behavioral_data(behavioral_data)
+
     def get_hierarchy_list(self):
         return self.hierarchy_list
 
@@ -225,16 +269,25 @@ class SystemGenerator:
 
         return cluster_set
 
-    # TODO qui bisogna aggiungere tutte le matrici
+    # TODO qui bisogna aggiungere alcune matrici
     def cluster_with_all_relations(self, class_name1, class_name2, pattern):
         total_relations = 0
         actual_relations = 0
-        if pattern.matrix_container.get_association_matrix() is not None:
+        if not isinstance(pattern.get_association_matrix(), str):
             total_relations = total_relations + 1
             first_boolean = self.matrix_container.get_association_matrix()[class_name1][class_name2] == 1
             second_boolean = self.matrix_container.get_association_matrix()[class_name2][class_name1] == 1
             if first_boolean or second_boolean:
                 actual_relations = actual_relations + 1
+        if not isinstance(pattern.get_invoked_method_in_inherited_method_matrix(), str):
+            total_relations = total_relations + 1
+            first_boolean = self.matrix_container.get_invoked_method_in_inherited_method_matrix()[class_name1][
+                                class_name2] == 1
+            second_boolean = self.matrix_container.get_invoked_method_in_inherited_method_matrix()[class_name2][
+                                 class_name1] == 1
+            if first_boolean or second_boolean:
+                actual_relations = actual_relations + 1
+
         # Repeat the above if block for each pattern matrix
         # ...
         return total_relations == actual_relations
@@ -253,18 +306,29 @@ class SystemGenerator:
                 if s not in hierarchies_class_name_list:
                     hierarchies_class_name_list.append(s)
 
+        # Generalization Matrix
         hierarchies_matrix_container.set_class_name_list(hierarchies_class_name_list)
-
 
         generalization_output = self.generate_hierarchies_matrix(hierarchies_class_name_list,
                                                                  self.matrix_container.get_generalization_matrix(),
                                                                  None)
         hierarchies_matrix_container.set_generalization_matrix(generalization_output[0])
 
-
+        # Association Matrix
         association_output = self.generate_hierarchies_matrix(hierarchies_class_name_list,
-                                                              self.matrix_container.get_association_matrix(), None)
+                                                              self.matrix_container.get_association_matrix(),
+                                                              None)
         hierarchies_matrix_container.set_association_matrix(association_output[0])
+
+        # Invoked Method in inherited method matrix
+        invoked_method_in_inherited_method_output = self.generate_hierarchies_matrix(hierarchies_class_name_list,
+                                                                                     self.matrix_container.get_invoked_method_in_inherited_method_matrix(),
+                                                                                     self.matrix_container.get_invoked_method_in_inherited_method_behavioral_data())
+
+        hierarchies_matrix_container.set_invoked_method_in_inherited_method_matrix(
+            invoked_method_in_inherited_method_output[0])
+        hierarchies_matrix_container.set_invoked_method_in_inherited_method_behavioral_data(
+            invoked_method_in_inherited_method_output[1])
 
         # Repeat the above two lines for each pattern matrix
         # ...
@@ -293,3 +357,24 @@ class SystemGenerator:
                         hierarchies_behavioral_data.add_methods(i, j, methods)
 
         return hierarchies_matrix, hierarchies_behavioral_data
+
+    def belong_in_same_hierarchy(self, class_name1, class_name2):
+        for ih in self.hierarchy_list:
+            if isinstance(ih, InheritanceHierarchy):
+                if ih.get_node(class_name1) is not None and ih.get_node(class_name2) is not None:
+                    return True
+        return False
+
+    def get_fields_of_class_accessed_in_method_calling_method_invocation(self, co, fo, mio):
+        fields = []
+        for fio in fo.get_instructions_list():
+            posX = self.system_object.get_position_in_class_list(fio.get_original_class_name())
+            fieldType = fio.get_original_class_name()
+            if fieldType.endswith("[]"):
+                fieldType = fieldType[:fieldType.index("[")]
+            if posX != -1 and fieldType == mio.get_original_class_name():
+                tempX = co.get_field(fio)
+                if tempX is not None and tempX not in fields and not tempX.get_variable_name().startswith(
+                        "val$") and not tempX.get_variable_name().startswith("this$"):
+                    fields.append(tempX)
+        return fields

@@ -129,3 +129,15 @@ class ClassObject:
             string_to_return = string_to_return + internal_string_tabs + "</INSTRUCTION_LIST>\n"
         string_to_return = string_to_return + string_tabs + "</CLASS>"
         return string_to_return
+
+    def has_field_type(self, field_type):
+        for variable in self.variables_list:
+            if variable.get_type() == field_type:
+                return True
+        return False
+
+    def get_field(self, fio):
+        for fo in self.variables_list:
+            if fo.get_type() == fio.get_original_class_name():
+                return fo
+        return None

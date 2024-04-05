@@ -44,9 +44,6 @@ class FunctionReader:
                     raw_label = str(instruction.arg).removeprefix("<bytecode.instr.Label object at ").removesuffix(">")
                     i = i + 1
 
-                    # Create a with object
-                    # TODO
-
                     next_instructions = list()
                     jump_raw_label = ""
                     while not isinstance(by[i], Label):
@@ -61,8 +58,6 @@ class FunctionReader:
                                 break
                             next_instructions.append(by[i])
                             i = i + 1
-
-                    # TODO add the instructions at with object
 
                     next_instructions = list()
                     # Jump Label instruction
@@ -79,8 +74,6 @@ class FunctionReader:
                             if internal_raw_label == jump_raw_label:
                                 break
                             i = i + 1
-
-                    # TODO Add with at instructions list
 
                 # Exception -> SETUP_FINALLY<Label> InstructionList POP_BLOCK InstructionList <Label> POP_TOP POP_TOP
                 # POP_TOP InstructionList POP_EXCEPT InstructionList
@@ -752,9 +745,10 @@ class FunctionReader:
                 # CallFunction -> LOAD_GLOBAL Some informations CALL_FUNCTION
                 case "CALL_FUNCTION_KW":
 
-                    if by[i + 1].name != "POP_TOP":
-                        i = i + 1
-                        continue
+                    if len(by) != i + 1:
+                        if by[i + 1].name != "POP_TOP":
+                            i = i + 1
+                            continue
 
                     copy = by[:i + 1]
                     copy.reverse()
@@ -1209,6 +1203,14 @@ class FunctionReader:
                                     return_values = self.recursive_identification(return_values[0])
                                     variable_in_list.set_variable_name(return_values[0])
                                     variable_in_list.set_type("variable")
+                                elif copy[counter_copy].name == "STORE_FAST":
+                                    counter_copy = counter_copy + 2
+                                    real_copy = copy[:counter_copy]
+                                    real_copy.reverse()
+                                    return_values = self.arguments_instructions(real_copy)
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable_in_list.set_variable_name(return_values[0])
+                                    variable_in_list.set_type("variable")
                                 else:
                                     print("Not registered UNPACK_SEQUENCE")
                                     print(copy[counter_copy])
@@ -1353,6 +1355,22 @@ class FunctionReader:
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         elif previous_instructions[1].name == "MAKE_FUNCTION":
                             variable.set_type("variable")
+                            variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
+                        elif previous_instructions[1].name == "LIST_EXTEND":
+                            copy = by[:i - 1]
+                            copy.reverse()
+                            return_values = self.arguments_instructions(copy)
+                            return_values = self.recursive_identification(return_values[0])
+                            variable.set_type("variable")
+                            variable.set_argument(return_values[0])
+                            variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
+                        elif previous_instructions[1].name == "BINARY_SUBTRACT":
+                            copy = by[:i - 1]
+                            copy.reverse()
+                            return_values = self.arguments_instructions(copy)
+                            return_values = self.recursive_identification(return_values[0])
+                            variable.set_type("variable")
+                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         else:
                             print("LOAD_FAST Function Reader not registered")
@@ -2109,6 +2127,9 @@ class FunctionReader:
                     counter = 0
                     counter_arguments = counter_arguments + 1
 
+                if len(by) == counter:
+                    return call_function, []
+
                 # Name of method
                 if by[counter].name == "LOAD_METHOD":
                     return_values = self.recursive_identification(by[counter:])
@@ -2695,7 +2716,6 @@ class FunctionReader:
                 counter = 0
 
                 arguments = arguments.removesuffix(",")
-                # TODO i don't know when use the arguments
                 return return_values[0], by[counter:]
             elif by[counter].name == "ROT_THREE":
                 counter = counter + 1
@@ -2984,6 +3004,8 @@ class FunctionReader:
 
             # Parameters
             while counter_arguments < number_of_arguments:
+                if len(by) == counter:
+                    return [], []
                 return_values = self.arguments_instructions(by[counter:])
                 try:
                     instruction_list.extend(return_values[0])

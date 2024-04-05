@@ -49,3 +49,6 @@ class ReturnObject:
                     self.argument) + "</ARGUMENT>\n"
         return_string = return_string + string_tabs + "</RETURN>"
         return return_string
+
+    def __str__(self):
+        return str(self.argument) + ":" + self.type

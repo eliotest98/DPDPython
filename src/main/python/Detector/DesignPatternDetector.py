@@ -22,7 +22,33 @@ class SimilarityAlgorithm:
         #    else:
         #        x = np.add(x, self.get_similarity_score(system_container.get_double_dispatch_matrix(),
         #                                                pattern_descriptor.get_double_dispatch_matrix()))
-        if pattern_descriptor.get_association_matrix() is not None:
+        # Generalization Matrix
+        if not isinstance(pattern_descriptor.get_generalization_matrix(), str):
+            if self.all_elements_equal_to_zero(system_container.get_generalization_matrix()):
+                return None
+            else:
+                # RedirectInFamily pattern case ()
+                # x = MatrixGesture.plus(x, self.get_similarity_score(system_container.get_generalization_matrix(),
+                #                                                    pattern_descriptor.get_generalization_matrix()))
+                pass
+
+        # Invoked Method in inherited method Matrix
+        if not isinstance(pattern_descriptor.get_invoked_method_in_inherited_method_matrix(), str):
+            if self.all_elements_equal_to_zero(system_container.get_invoked_method_in_inherited_method_matrix()):
+                return None
+            else:
+                system_matrix = system_container.get_invoked_method_in_inherited_method_matrix()
+                pattern_matrix = pattern_descriptor.get_invoked_method_in_inherited_method_matrix()
+                pattern_matrix.index = system_matrix.index
+                pattern_matrix.columns = system_matrix.columns
+                x = pd.DataFrame(x, system_matrix.index, system_matrix.columns)
+                x = MatrixGesture.plus(x, self.get_similarity_score(
+                    system_container.get_invoked_method_in_inherited_method_matrix(),
+                    pattern_descriptor.get_invoked_method_in_inherited_method_matrix()))
+                pass
+
+        # Association Matrix
+        if not isinstance(pattern_descriptor.get_association_matrix(), str):
             if self.all_elements_equal_to_zero(system_container.get_association_matrix()):
                 return None
             else:
@@ -143,14 +169,14 @@ class DesignPatternDetection:
 
         adapt_matrix = [[0, 0], [0, 0]]
         adapt_matrix[0][1] = 1
-        labels = ['Pippo', 'Pluto']
+        labels = ['Adaptee', 'Adapter']
         df_adapt_matrix = pd.DataFrame(adapt_matrix, index=labels, columns=labels)
         apd.set_invoked_method_in_inherited_method_matrix(df_adapt_matrix)
 
         # Adaptee and Adapter class
         apd.set_number_of_hierarchies(2)
 
-        # TODO chiedere al prof cosa può essere (in origine è division_array = [2,2])
+        # TODO in origine è division_array = [2,2]
         division_array = [1, 1]
         apd.set_divisor_array(division_array)
         apd.set_method_role_name("Request()/Execute()")
