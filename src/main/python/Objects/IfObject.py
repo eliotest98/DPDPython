@@ -85,6 +85,8 @@ class IfObject:
                     if isinstance(instruction, CallFunctionObject):
                         string_to_return = string_to_return + instruction.abstract_syntax_tree(
                             number_of_tabs + 1) + "\n"
+                    elif isinstance(instruction, str):
+                        string_to_return = string_to_return + internal_string_tabs + instruction + "\n"
                     else:
                         string_to_return = string_to_return + instruction.abstract_syntax_tree(
                             number_of_tabs + 2) + "\n"
@@ -112,6 +114,8 @@ class IfObject:
                     if isinstance(instruction, CallFunctionObject):
                         string_to_return = string_to_return + instruction.abstract_syntax_tree(
                             number_of_tabs + 1) + "\n"
+                    elif isinstance(instruction, str):
+                        string_to_return = string_to_return + internal_string_tabs + instruction + "\n"
                     else:
                         string_to_return = string_to_return + instruction.abstract_syntax_tree(
                             number_of_tabs + 2) + "\n"
@@ -122,6 +126,8 @@ class IfObject:
                     if isinstance(instruction, CallFunctionObject):
                         string_to_return = string_to_return + instruction.abstract_syntax_tree(
                             number_of_tabs + 1) + "\n"
+                    elif isinstance(instruction, (str, FreeVar)):
+                        string_to_return = string_to_return + internal_string_tabs + str(instruction)
                     else:
                         string_to_return = string_to_return + instruction.abstract_syntax_tree(
                             number_of_tabs + 2) + "\n"

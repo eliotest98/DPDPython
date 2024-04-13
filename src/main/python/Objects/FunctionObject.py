@@ -40,6 +40,9 @@ class FunctionObject:
     def add_parameter(self, parameter_name):
         self.parameters_list.append(parameter_name)
 
+    def get_parameters(self):
+        return self.parameters_list
+
     def add_variable(self, variable_object):
         self.variables_list.append(variable_object)
 
@@ -98,7 +101,10 @@ class FunctionObject:
         if len(self.variables_list) != 0:
             string_to_return = string_to_return + internal_string_tabs + "<VARIABLE_LIST>\n"
             for variable in self.variables_list:
-                string_to_return = string_to_return + variable.abstract_syntax_tree(number_of_tabs + 2) + "\n"
+                if isinstance(variable, (str, bytes)):
+                    string_to_return = string_to_return + internal_string_tabs + variable + "\n"
+                else:
+                    string_to_return = string_to_return + variable.abstract_syntax_tree(number_of_tabs + 2) + "\n"
             string_to_return = string_to_return + internal_string_tabs + "</VARIABLE_LIST>\n"
         if len(self.instruction_list) != 0:
             string_to_return = string_to_return + internal_string_tabs + "<INSTRUCTION_LIST>\n"

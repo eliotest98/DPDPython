@@ -52,7 +52,7 @@ class SuperclassDetector:
                             if method_name is not None:
                                 if isinstance(method_name, (VariableObject, CallFunctionObject)):
                                     method_name = str(method_name)
-                                method_name = method_name.removeprefix(".")
+                                method_name = str(method_name).removeprefix(".")
                                 for class_name, methods_list in self.functions_list_of_classes.items():
                                     for inside_method in methods_list:
                                         if inside_method == method_name:
@@ -72,6 +72,8 @@ class SuperclassDetector:
         elif isinstance(list_, (CicleObject, ReturnObject, ImportObject, OperationObject)):
             pass
         elif isinstance(list_, (int, str, float, CellVar)):
+            pass
+        elif list_ is None:
             pass
         else:
             if not isinstance(list_, (int, str)):
@@ -95,6 +97,12 @@ class SuperclassDetector:
                         if key == superclass:
                             key_found = key
                             break
+                        # Control if the class is in the same file
+                        else:
+                            key_to_control = class_object.get_file_name() + "." + superclass
+                            if key == key_to_control:
+                                key_found = key
+                                break
                     if key_found == "":
                         list_to_delete.append(superclass)
                         list_to_add.append("Import:" + superclass)

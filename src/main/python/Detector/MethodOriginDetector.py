@@ -33,7 +33,8 @@ class MethodOriginDetector:
                             candidate_classes = list()
                             for class_of_function_list in self.functions_list:
                                 for function_of_class in self.functions_list[class_of_function_list]:
-                                    if function_of_class == instruction.get_argument().get_method_name().removeprefix(
+                                    if function_of_class == str(
+                                            instruction.get_argument().get_method_name()).removeprefix(
                                             "."):
                                         candidate_classes.append(class_of_function_list)
                             if 0 < len(candidate_classes) < 2:
@@ -42,6 +43,10 @@ class MethodOriginDetector:
                         candidate_classes = list()
                         for class_of_function_list in self.functions_list:
                             for function_of_class in self.functions_list[class_of_function_list]:
+                                if isinstance(instruction.get_method_name(), int):
+                                    continue
+                                elif instruction.get_method_name() is None:
+                                    continue
                                 if function_of_class == instruction.get_method_name().removeprefix("."):
                                     candidate_classes.append(class_of_function_list)
                         if 0 < len(candidate_classes) < 2:

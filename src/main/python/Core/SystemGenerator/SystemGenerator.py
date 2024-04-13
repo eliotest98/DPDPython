@@ -111,7 +111,6 @@ class SystemGenerator:
             for fo in co.get_variables_list():
                 if isinstance(fo, VariableObject):
                     class_type = fo.get_type()
-                    print(class_type)
                     pos = self.system_object.get_position_in_class_list(class_type)
                     if pos != -1 and counter != pos:
                         assoc_matrix[counter][pos] = 1
@@ -256,6 +255,9 @@ class SystemGenerator:
                             if class_name2 not in ih2_nodes_checked:
                                 ih2_nodes_checked.append(class_name2)
                                 if class_name1 != class_name2:
+                                    if self.system_object.get_class_object_with_class_name(class_name1) is None \
+                                            or self.system_object.get_class_object_with_class_name(class_name2) is None:
+                                        continue
                                     sum += system_adjacency_matrix[class_name1][class_name2]
                                     if self.cluster_with_all_relations(class_name1, class_name2, pattern_descriptor):
                                         all_relations = True
@@ -368,6 +370,8 @@ class SystemGenerator:
     def get_fields_of_class_accessed_in_method_calling_method_invocation(self, co, fo, mio):
         fields = []
         for fio in fo.get_instructions_list():
+            if not isinstance(fio, CallFunctionObject):
+                continue
             posX = self.system_object.get_position_in_class_list(fio.get_original_class_name())
             fieldType = fio.get_original_class_name()
             if fieldType.endswith("[]"):

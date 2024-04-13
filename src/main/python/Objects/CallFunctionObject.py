@@ -4,7 +4,7 @@
 # - a name method
 # - a list of parameters
 # - the origin class name who implement the function called
-from bytecode import CellVar
+from bytecode import CellVar, FreeVar
 
 
 class CallFunctionObject:
@@ -94,7 +94,7 @@ class CallFunctionObject:
         if len(self.parameters_list) != 0:
             self.parameters_list.reverse()
             for param in self.parameters_list:
-                if isinstance(param, (str, int, tuple, float, CellVar)):
+                if isinstance(param, (str, int, tuple, float, CellVar, FreeVar, bytes)):
                     string_to_return = string_to_return + str(param) + "\n\t" + internal_string_tabs + ","
                 elif isinstance(param, CallFunctionObject):
                     string_to_return = string_to_return + "\n" + param.abstract_syntax_tree(

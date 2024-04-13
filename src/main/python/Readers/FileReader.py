@@ -167,8 +167,9 @@ class FileReader:
                     if i < len(by):
                         if by[i].name == "RERAISE":
                             i = i + 1
-                            if isinstance(by[i], Label):
-                                i = i + 1
+                            if i < len(by):
+                                if isinstance(by[i], Label):
+                                    i = i + 1
 
                     # Add exception object at instructions of file
                     file_object.add_instruction(exception_object)
@@ -267,6 +268,13 @@ class FileReader:
                     copy = by[:i]
                     copy.reverse()
                     return_values = self.arguments_instructions(copy)
+                    try:
+                        if len(return_values[0]) == 0:
+                            i = i + 1
+                            continue
+                    except:
+                        pass
+
                     return_values = self.recursive_identification(return_values[0])
 
                     # Create an operation object
@@ -281,11 +289,15 @@ class FileReader:
 
                     next_instructions = list()
                     raw_else_label = ""
+
+                    if i >= len(by):
+                        continue
+
                     # Get all instructions
                     while not isinstance(by[i], Label):
                         next_instructions.append(by[i])
                         i = i + 1
-                        if len(by) == i:
+                        if i >= len(by):
                             break
                         if isinstance(by[i], Label):
                             if_raw_label = str(by[i]).removeprefix(
@@ -298,6 +310,8 @@ class FileReader:
                                 break
                             next_instructions.append(by[i])
                             i = i + 1
+                            if i >= len(by):
+                                break
 
                     i = i + 1
 
@@ -366,11 +380,13 @@ class FileReader:
 
                     next_instructions = list()
                     raw_else_label = ""
+                    if i >= len(by):
+                        continue
                     # Get all instructions
                     while not isinstance(by[i], Label):
                         next_instructions.append(by[i])
                         i = i + 1
-                        if len(by) == i:
+                        if i >= len(by):
                             break
                         if isinstance(by[i], Label):
                             if_raw_label = str(by[i]).removeprefix(
@@ -383,6 +399,8 @@ class FileReader:
                                 break
                             next_instructions.append(by[i])
                             i = i + 1
+                            if i >= len(by):
+                                break
 
                     i = i + 1
 
@@ -407,7 +425,7 @@ class FileReader:
                             break
                         next_instructions.append(by[i])
                         i = i + 1
-                        if len(by) == i:
+                        if i >= len(by):
                             break
                         if isinstance(by[i], Label):
                             else_raw_label = str(by[i]).removeprefix(
@@ -416,6 +434,8 @@ class FileReader:
                                 break
                             next_instructions.append(by[i])
                             i = i + 1
+                            if i >= len(by):
+                                break
 
                     # Create a false function object for get the instructions
                     false_file_object = FileObject()
@@ -448,9 +468,13 @@ class FileReader:
                 # CallFunction -> LOAD_GLOBAL Some informations CALL_FUNCTION
                 case "CALL_FUNCTION_KW":
 
-                    if by[i + 1].name != "POP_TOP":
-                        i = i + 1
-                        continue
+                    if i + 1 != len(by):
+                        if isinstance(by[i + 1], Label):
+                            i = i + 1
+                            continue
+                        if by[i + 1].name != "POP_TOP":
+                            i = i + 1
+                            continue
 
                     copy = by[:i + 1]
                     copy.reverse()
@@ -467,6 +491,9 @@ class FileReader:
                 case "CALL_FUNCTION":
 
                     if i + 1 != len(by):
+                        if isinstance(by[i + 1], Label):
+                            i = i + 1
+                            continue
                         if by[i + 1].name != "POP_TOP":
                             i = i + 1
                             continue
@@ -501,7 +528,10 @@ class FileReader:
                     # Create a variable for store the condition
                     variable_condition = VariableObject()
 
-                    if previous_instruction[0].name == "CALL_FUNCTION":
+                    if isinstance(previous_instruction[0], Label):
+                        i = i + 1
+                        continue
+                    elif previous_instruction[0].name == "CALL_FUNCTION":
 
                         if not isinstance(by[i + 1], Label):
                             if by[i + 1].name == "STORE_NAME":
@@ -530,8 +560,12 @@ class FileReader:
                         variable_condition.set_argument(previous_instruction[0].arg)
                         variable_condition.set_type(str(type(previous_instruction[0].arg).__name__))
                     elif previous_instruction[0].name == "BINARY_SUBSCR":
-                        variable_condition.set_argument(by[i - 3].arg + "[" + by[i - 2].arg + "]")
+                        copy = by[:i]
+                        copy.reverse()
+                        return_values = self.arguments_instructions(copy)
+                        return_values = self.recursive_identification(return_values[0])
                         variable_condition.set_type("variable")
+                        variable_condition.set_argument(return_values[0])
                     elif previous_instruction[0].name == "LOAD_NAME":
                         variable = VariableObject()
                         variable.set_type("variable")
@@ -578,6 +612,8 @@ class FileReader:
                     while not isinstance(by[i], Label):
                         body_instructions.append(by[i])
                         i = i + 1
+                        if len(by) == i:
+                            break
                         if isinstance(by[i], Label):
                             for_label_esadecimal = str(by[i]).removeprefix(
                                 "<bytecode.instr.Label object at ").removesuffix(
@@ -614,34 +650,28 @@ class FileReader:
                         previous_instruction.append(by[i - 2])
                         variable_name = previous_instruction[0].arg + "." + instruction.arg
                         if previous_instruction[1].name == "CALL_FUNCTION":
-                            previous_instruction = list()
-                            count = i - 1
-                            while by[count].name != "POP_TOP" and by[count].name != "NOP" and by[
-                                count].name != "STORE_NAME" and by[count].name != "LOAD_BUILD_CLASS":
-                                previous_instruction.append(by[count])
-                                count = count - 1
-                            previous_instruction.append(by[count])
+                            copy = by[:i - 1]
+                            copy.reverse()
+                            return_values = self.arguments_instructions(copy)
 
-                            # In this case is a call function
-                            if isinstance(previous_instruction[len(previous_instruction) - 2].arg, str):
-                                # Create a call function object
-                                call_function = CallFunctionObject()
+                            # Create a call function object
+                            call_function = CallFunctionObject()
 
-                                call_function_reader = CallFunctionReader()
-                                call_function_reader.read_call_function(call_function, previous_instruction,
-                                                                        debug_active)
+                            call_function_reader = CallFunctionReader()
+                            call_function_reader.read_call_function(call_function, return_values[0],
+                                                                    debug_active)
 
-                                # Create a variable object
-                                variable = VariableObject()
-                                variable.set_variable_name(variable_name)
-                                variable.set_argument(call_function)
-                                variable.set_type("CallFunction")
+                            # Create a variable object
+                            variable = VariableObject()
+                            variable.set_variable_name(variable_name)
+                            variable.set_argument(call_function)
+                            variable.set_type("CallFunction")
 
-                                # Add the call function at instructions of file object
-                                file_object.add_instruction(variable)
+                            # Add the call function at instructions of file object
+                            file_object.add_instruction(variable)
 
-                                i = i + 1
-                                continue
+                            i = i + 1
+                            continue
 
                 # Variable -> LOAD_CONST LOAD_NAME LOAD_CONST STORE_SUBSCR
                 case "STORE_SUBSCR":
@@ -662,6 +692,12 @@ class FileReader:
                     # Set the variable name
                     variable_object.set_variable_name(
                         str(variable_name) + "[" + str(square_parenthesis) + "]")
+
+                    if len(previous_instructions) == 0:
+                        # Add the variable at instruction list
+                        file_object.add_instruction(variable_object)
+                        i = i + 1
+                        continue
 
                     # Variable -> LOAD_CONST LOAD_NAME LOAD_CONST STORE_SUBSCR
                     if previous_instructions[0].name == "LOAD_CONST":
@@ -874,11 +910,33 @@ class FileReader:
 
                         # Add the call function at instructions of file object
                         file_object.add_instruction(variable)
+                    elif previous_instruction[0].name == "CALL_FUNCTION_EX":
+                        copy = by[:i]
+                        copy.reverse()
+                        return_values = self.arguments_instructions(copy)
+
+                        # Create a call function object
+                        call_function = CallFunctionObject()
+
+                        call_function_reader = CallFunctionReader()
+                        call_function_reader.read_call_function(call_function, return_values[0], debug_active)
+
+                        # Create a variable object
+                        variable = VariableObject()
+                        variable.set_variable_name(instruction.arg)
+                        variable.set_argument(call_function)
+                        variable.set_type("CallFunction")
+
+                        # Add the call function at instructions of file object
+                        file_object.add_instruction(variable)
                     # Variable -> CallMethod STORE_NAME
                     elif previous_instruction[0].name == "CALL_METHOD":
 
                         if len(by) != i + 1:
-                            if by[i + 1].name == "CALL_FUNCTION":
+                            if isinstance(by[i + 1], Label):
+                                i = i + 1
+                                continue
+                            elif by[i + 1].name == "CALL_FUNCTION":
                                 i = i + 1
                                 continue
                             elif by[i + 1].name == "LOAD_METHOD":
@@ -1100,6 +1158,13 @@ class FileReader:
                         copy = by[:i]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            variable_object = VariableObject()
+                            variable_object.set_variable_name(instruction.arg)
+                            variable_object.set_type("BuildMap")
+                            file_object.add_variable(variable_object)
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         # Create a variable object
                         variable_object = VariableObject()
@@ -1129,7 +1194,7 @@ class FileReader:
                         number_of_arguments = previous_instruction[0].arg
                         counter_arguments = 0
                         while counter_arguments < number_of_arguments:
-                            arguments = arguments + by[i].arg + ","
+                            arguments = arguments + str(by[i].arg) + ","
                             i = i + 1
                             counter_arguments = counter_arguments + 1
 
@@ -1197,6 +1262,18 @@ class FileReader:
                         variable_object.set_argument(return_values[0])
                         variable_object.set_type("dictionary")
                         file_object.add_variable(variable_object)
+                    elif previous_instruction[0].name.__contains__("_OP"):
+                        copy = by[:i]
+                        copy.reverse()
+                        return_values = self.arguments_instructions(copy)
+                        return_values = self.recursive_identification(return_values[0])
+                        # Create a variable object
+                        variable_object = VariableObject()
+                        variable_object.set_variable_name(instruction.arg)
+                        # Set the result of the recursive identification
+                        variable_object.set_argument(return_values[0])
+                        variable_object.set_type("Operation")
+                        file_object.add_variable(variable_object)
                     else:
                         print("STORE_NAME not registered File Reader")
                         print(previous_instruction[0])
@@ -1223,6 +1300,10 @@ class FileReader:
                 value = by[counter].arg
                 counter = counter + 1
                 return value, by[counter:]
+            elif by[counter].name == "STORE_GLOBAL":
+                value = by[counter].arg
+                counter = counter + 1
+                return value, by[counter:]
             elif by[counter].name == "LOAD_ATTR":
                 second_value = by[counter].arg
                 counter = counter + 1
@@ -1233,10 +1314,18 @@ class FileReader:
                 return str(first_value) + "." + str(second_value), by[counter:]
             elif by[counter].name == "BINARY_SUBSCR":
                 counter = counter + 1
+
+                if len(by[counter:]) == 0:
+                    return "", []
+
                 return_values = self.recursive_identification(by[counter:])
                 value_internal = return_values[0]
                 by = return_values[1]
                 counter = 0
+
+                if len(by[counter:]) == 0:
+                    return "", []
+
                 return_values = self.recursive_identification(by[counter:])
                 path = return_values[0]
                 by = return_values[1]
@@ -1245,11 +1334,17 @@ class FileReader:
             elif by[counter].name == "BINARY_SUBTRACT":
                 counter = counter + 1
 
+                if len(by[counter:]) == 0:
+                    return "", []
+
                 # First Operand
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
                 counter = 0
                 subtract = " - " + str(return_values[0])
+
+                if len(by[counter:]) == 0:
+                    return "", []
 
                 # Second Operand
                 return_values = self.recursive_identification(by[counter:])
@@ -1261,11 +1356,17 @@ class FileReader:
             elif by[counter].name == "BINARY_ADD":
                 counter = counter + 1
 
+                if len(by[counter:]) == 0:
+                    return "", []
+
                 # First Operand
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
                 counter = 0
                 sum = " + " + str(return_values[0])
+
+                if len(by[counter:]) == 0:
+                    return "", []
 
                 # Second Operand
                 return_values = self.recursive_identification(by[counter:])
@@ -1277,11 +1378,17 @@ class FileReader:
             elif by[counter].name == "BINARY_MODULO":
                 counter = counter + 1
 
+                if len(by[counter:]) == 0:
+                    return "", []
+
                 # First Operand
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
                 counter = 0
                 sum = " + " + str(return_values[0])
+
+                if len(by[counter:]) == 0:
+                    return "", []
 
                 # Second Operand
                 return_values = self.recursive_identification(by[counter:])
@@ -1300,6 +1407,8 @@ class FileReader:
 
                 # Parameters
                 while counter_arguments < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return call_function, []
                     return_values = self.recursive_identification(by[counter:])
                     call_function.add_parameter(return_values[0])
                     by = return_values[1]
@@ -1316,6 +1425,9 @@ class FileReader:
                     print("LOAD_METHOD not forever File Reader")
                     print(by)
                     exit(-1)
+
+                if len(by[counter:]) == 0:
+                    return call_function, []
 
                 # Path of method
                 return_values = self.recursive_identification(by[counter:])
@@ -1350,6 +1462,8 @@ class FileReader:
                     counter = 0
                     counter_arguments = counter_arguments + 1
 
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 return_values = self.recursive_identification(by[counter:])
                 call_function.set_method_name(return_values[0])
                 by = return_values[1]
@@ -1396,6 +1510,8 @@ class FileReader:
                 arguments_counter = 0
                 arguments = ""
                 while arguments_counter < number_of_elements:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
                     counter = 0
@@ -1413,6 +1529,8 @@ class FileReader:
                 counter_arguments = 0
                 raw_map = "{"
                 while counter_arguments < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     return_values = self.recursive_identification(by[counter:])
                     raw_map = raw_map + str(arguments_list[counter_arguments]) + ":" + str(return_values[0]) + ","
                     by = return_values[1]
@@ -1467,11 +1585,16 @@ class FileReader:
                 arguments_counter = 0
                 list_values = "{"
                 while arguments_counter < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "", []
                     # Value
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
                     counter = 0
                     value = return_values[0]
+
+                    if len(by[counter:]) == 0:
+                        return "", []
                     # Key
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
@@ -1505,6 +1628,8 @@ class FileReader:
                 arguments = ""
 
                 while arguments_counter < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
                     counter = 0
@@ -1520,6 +1645,8 @@ class FileReader:
                 arguments_counter = 0
                 arguments = ""
                 while arguments_counter < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
                     counter = 0
@@ -1534,6 +1661,8 @@ class FileReader:
                 counter_arguments = 0
                 arguments = "["
                 while counter_arguments < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
                     counter = 0
@@ -1569,6 +1698,225 @@ class FileReader:
                 by = return_values[1]
                 counter = 0
                 return return_values[0], by[counter:]
+            elif by[counter].name == "BUILD_SLICE":
+                number_of_arguments = by[counter].arg
+                counter = counter + 1
+                arguments_counter = 0
+                raw_slice = list()
+                # Arguments
+                while arguments_counter < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
+                    return_values = self.recursive_identification(by[counter:])
+                    by = return_values[1]
+                    counter = 0
+                    raw_slice.append(return_values[0])
+                    arguments_counter = arguments_counter + 1
+
+                raw_slice.reverse()
+                final_slice = ""
+                while len(raw_slice) != 0:
+                    final_slice = final_slice + str(raw_slice[0]) + ":"
+                    raw_slice.remove(raw_slice[0])
+                final_slice = final_slice.removesuffix(":")
+
+                return final_slice, by[counter:]
+            elif by[counter].name == "LOAD_GLOBAL":
+                value = by[counter].arg
+                counter = counter + 1
+                return value, by[counter:]
+            elif by[counter].name == "BINARY_MODULO":
+                counter = counter + 1
+                # First Part
+                return_values = self.recursive_identification(by[counter:])
+                module = return_values[0]
+                by = return_values[1]
+                counter = 0
+                module = " % " + str(module)
+                # Second Part
+                return_values = self.recursive_identification(by[counter:])
+                module = str(return_values[0]) + module
+                by = return_values[1]
+                counter = 0
+                return module, by[counter:]
+            elif by[counter].name == "BINARY_SUBTRACT":
+                counter = counter + 1
+
+                # First Operand
+                return_values = self.recursive_identification(by[counter:])
+                by = return_values[1]
+                counter = 0
+                subtract = " - " + str(return_values[0])
+
+                # Second Operand
+                return_values = self.recursive_identification(by[counter:])
+                by = return_values[1]
+                counter = 0
+                subtract = str(return_values[0]) + subtract
+
+                return subtract, by[counter:]
+            elif by[counter].name == "BINARY_MULTIPLY":
+                counter = counter + 1
+
+                # First Operand
+                return_values = self.recursive_identification(by[counter:])
+                by = return_values[1]
+                counter = 0
+                subtract = " * " + str(return_values[0])
+
+                # Second Operand
+                return_values = self.recursive_identification(by[counter:])
+                by = return_values[1]
+                counter = 0
+                subtract = str(return_values[0]) + subtract
+
+                return subtract, by[counter:]
+            elif by[counter].name == "BINARY_TRUE_DIVIDE":
+                counter = counter + 1
+
+                # First Operand
+                return_values = self.recursive_identification(by[counter:])
+                by = return_values[1]
+                counter = 0
+                subtract = " / " + str(return_values[0])
+
+                # Second Operand
+                return_values = self.recursive_identification(by[counter:])
+                by = return_values[1]
+                counter = 0
+                subtract = str(return_values[0]) + subtract
+
+                return subtract, by[counter:]
+            elif by[counter].name == "BINARY_AND":
+                counter = counter + 1
+                operation_object = OperationObject()
+                operation_object.set_operation_type("AND")
+                # Left Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_first_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                # Right Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_second_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                return operation_object, by[counter:]
+            elif by[counter].name == "BINARY_OR":
+                counter = counter + 1
+                operation_object = OperationObject()
+                operation_object.set_operation_type("OR")
+                # Left Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_first_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                # Right Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_second_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                return operation_object, by[counter:]
+            elif by[counter].name == "BINARY_POWER":
+                counter = counter + 1
+
+                # First Operand
+                return_values = self.recursive_identification(by[counter:])
+                by = return_values[1]
+                counter = 0
+                subtract = " ** " + str(return_values[0])
+
+                # Second Operand
+                return_values = self.recursive_identification(by[counter:])
+                by = return_values[1]
+                counter = 0
+                subtract = str(return_values[0]) + subtract
+                return subtract, by[counter:]
+            elif by[counter].name == "BINARY_FLOOR_DIVIDE":
+                counter = counter + 1
+                operation_object = OperationObject()
+                operation_object.set_operation_type("FLOOR DIVIDE")
+                # Left Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_first_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                # Right Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_second_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                return operation_object, by[counter:]
+            elif by[counter].name == "GET_ITER":
+                return "Skip", []
+            elif by[counter].name == "UNARY_NEGATIVE":
+                operation_name = "Unary Negative"
+                operation_object = OperationObject()
+                operation_object.set_operation_type(operation_name)
+                counter = counter + 1
+                # Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_second_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                return operation_object, by[counter:]
+            elif by[counter].name == "UNARY_NOT":
+                counter = counter + 1
+                operation_object = OperationObject()
+                operation_object.set_operation_type("UNARY NOT")
+
+                # Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_first_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                return operation_object, by[counter:]
+            elif by[counter].name == "MAP_ADD":
+                number_of_arguments = by[counter].arg
+                arguments_counter = 0
+                counter = counter + 1
+
+                arguments = ""
+                while arguments_counter < number_of_arguments:
+                    return_values = self.recursive_identification(by[counter:])
+                    by = return_values[1]
+                    counter = 0
+                    arguments = arguments + str(return_values[0]) + ","
+                    arguments_counter = arguments_counter + 1
+
+                return arguments, by[counter:]
+            elif by[counter].name == "BUILD_STRING":
+                number_of_arguments = by[counter].arg
+                counter = counter + 1
+                arguments_counter = 0
+                arguments = ""
+                while arguments_counter < number_of_arguments:
+                    return_values = self.recursive_identification(by[counter:])
+                    by = return_values[1]
+                    counter = 0
+                    arguments = arguments + str(return_values[0]) + ","
+                    arguments_counter = arguments_counter + 1
+
+                arguments = arguments.removesuffix(",")
+                return arguments, by[counter:]
+            elif by[counter].name == "FORMAT_VALUE":
+                number_of_arguments = by[counter].arg
+                counter = counter + 1
+                arguments_counter = 0
+                arguments = ""
+                while arguments_counter < number_of_arguments:
+                    return_values = self.recursive_identification(by[counter:])
+                    by = return_values[1]
+                    counter = 0
+                    arguments = arguments + str(return_values[0]) + ","
+                    arguments_counter = arguments_counter + 1
+
+                return_values = self.recursive_identification(by[counter:])
+                by = return_values[1]
+                counter = 0
+
+                arguments = arguments.removesuffix(",")
+                return return_values[0], by[counter:]
             else:
                 print("Recursive identification not registered File Reader")
                 print(by[counter])
@@ -1589,6 +1937,9 @@ class FileReader:
             elif by.name == "LOAD_CONST":
                 value = by.arg
                 return value, []
+            elif by.name == "LOAD_GLOBAL":
+                value = by.arg
+                return value, []
             else:
                 print("Recursive identification not registered File Reader Single")
                 print(by)
@@ -1602,7 +1953,7 @@ class FileReader:
         elif by[counter].name == "LOAD_CONST" or by[counter].name == "LOAD_FAST" or by[counter].name == "LOAD_GLOBAL" \
                 or by[counter].name == "LOAD_METHOD" or by[counter].name == "STORE_FAST" \
                 or by[counter].name == "LOAD_NAME" or by[counter].name == "LOAD_BUILD_CLASS" \
-                or by[counter].name == "STORE_NAME":
+                or by[counter].name == "STORE_NAME" or by[counter].name == "STORE_GLOBAL":
             value = by[counter]
             counter = counter + 1
             return value, by[counter:]
@@ -1672,6 +2023,8 @@ class FileReader:
                 counter = 0
                 counter_arguments = counter_arguments + 1
 
+            if len(by[counter:]) == 0:
+                return [], []
             # Function Name
             return_values = self.arguments_instructions(by[counter:])
             try:
@@ -1734,6 +2087,8 @@ class FileReader:
 
             # Parameters
             while counter_arguments < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return [], []
                 return_values = self.arguments_instructions(by[counter:])
                 try:
                     instruction_list.extend(return_values[0])
@@ -1754,6 +2109,8 @@ class FileReader:
             by = return_values[1]
             counter = 0
 
+            if len(by) == counter:
+                return [], []
             # Path of method
             return_values = self.arguments_instructions(by[counter:])
             try:
@@ -1772,6 +2129,8 @@ class FileReader:
 
             # Parameters
             while counter_arguments < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return [], []
                 return_values = self.arguments_instructions(by[counter:])
                 try:
                     instruction_list.extend(return_values[0])
@@ -1911,6 +2270,8 @@ class FileReader:
             counter = 0
             counter_arguments = 0
             while counter_arguments < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return [], []
                 return_values = self.arguments_instructions(by[counter:])
                 try:
                     instruction_list.extend(return_values[0])
@@ -1939,6 +2300,8 @@ class FileReader:
             counter = counter + 1
             arguments_counter = 0
             while arguments_counter < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return [], []
                 return_values = self.arguments_instructions(by[counter:])
                 try:
                     instruction_list.extend(return_values[0])
@@ -2035,6 +2398,9 @@ class FileReader:
                 instruction_list.append(return_values[0])
             by = return_values[1]
             counter = 0
+
+            if len(by[counter:]) == 0:
+                return [], []
             return_values = self.arguments_instructions(by[counter:])
             try:
                 instruction_list.extend(return_values[0])
@@ -2163,121 +2529,7 @@ class FileReader:
             by = return_values[1]
             counter = 0
             return instruction_list, by[counter:]
-        elif by[counter].name == "BINARY_AND":
-            instruction_list = list()
-            instruction_list.append(by[counter])
-            counter = counter + 1
-            return_values = self.arguments_instructions(by[counter:])
-            try:
-                instruction_list.extend(return_values[0])
-            except TypeError:
-                instruction_list.append(return_values[0])
-            by = return_values[1]
-            counter = 0
-            return_values = self.arguments_instructions(by[counter:])
-            try:
-                instruction_list.extend(return_values[0])
-            except TypeError:
-                instruction_list.append(return_values[0])
-            by = return_values[1]
-            counter = 0
-            return instruction_list, by[counter:]
-        elif by[counter].name == "BINARY_LSHIFT":
-            instruction_list = list()
-            instruction_list.append(by[counter])
-            counter = counter + 1
-            return_values = self.arguments_instructions(by[counter:])
-            try:
-                instruction_list.extend(return_values[0])
-            except TypeError:
-                instruction_list.append(return_values[0])
-            by = return_values[1]
-            counter = 0
-            return_values = self.arguments_instructions(by[counter:])
-            try:
-                instruction_list.extend(return_values[0])
-            except TypeError:
-                instruction_list.append(return_values[0])
-            by = return_values[1]
-            counter = 0
-            return instruction_list, by[counter:]
-        elif by[counter].name == "BINARY_RSHIFT":
-            instruction_list = list()
-            instruction_list.append(by[counter])
-            counter = counter + 1
-            return_values = self.arguments_instructions(by[counter:])
-            try:
-                instruction_list.extend(return_values[0])
-            except TypeError:
-                instruction_list.append(return_values[0])
-            by = return_values[1]
-            counter = 0
-            return_values = self.arguments_instructions(by[counter:])
-            try:
-                instruction_list.extend(return_values[0])
-            except TypeError:
-                instruction_list.append(return_values[0])
-            by = return_values[1]
-            counter = 0
-            return instruction_list, by[counter:]
-        elif by[counter].name == "BINARY_OR":
-            instruction_list = list()
-            instruction_list.append(by[counter])
-            counter = counter + 1
-            return_values = self.arguments_instructions(by[counter:])
-            try:
-                instruction_list.extend(return_values[0])
-            except TypeError:
-                instruction_list.append(return_values[0])
-            by = return_values[1]
-            counter = 0
-            return_values = self.arguments_instructions(by[counter:])
-            try:
-                instruction_list.extend(return_values[0])
-            except TypeError:
-                instruction_list.append(return_values[0])
-            by = return_values[1]
-            counter = 0
-            return instruction_list, by[counter:]
-        elif by[counter].name == "BINARY_XOR":
-            instruction_list = list()
-            instruction_list.append(by[counter])
-            counter = counter + 1
-            return_values = self.arguments_instructions(by[counter:])
-            try:
-                instruction_list.extend(return_values[0])
-            except TypeError:
-                instruction_list.append(return_values[0])
-            by = return_values[1]
-            counter = 0
-            return_values = self.arguments_instructions(by[counter:])
-            try:
-                instruction_list.extend(return_values[0])
-            except TypeError:
-                instruction_list.append(return_values[0])
-            by = return_values[1]
-            counter = 0
-            return instruction_list, by[counter:]
-        elif by[counter].name == "BINARY_MULTIPLY":
-            instruction_list = list()
-            instruction_list.append(by[counter])
-            counter = counter + 1
-            return_values = self.arguments_instructions(by[counter:])
-            try:
-                instruction_list.extend(return_values[0])
-            except TypeError:
-                instruction_list.append(return_values[0])
-            by = return_values[1]
-            counter = 0
-            return_values = self.arguments_instructions(by[counter:])
-            try:
-                instruction_list.extend(return_values[0])
-            except TypeError:
-                instruction_list.append(return_values[0])
-            by = return_values[1]
-            counter = 0
-            return instruction_list, by[counter:]
-        elif by[counter].name == "BINARY_TRUE_DIVIDE":
+        elif by[counter].name.__contains__("BINARY_"):
             instruction_list = list()
             instruction_list.append(by[counter])
             counter = counter + 1
@@ -2313,6 +2565,152 @@ class FileReader:
                 arguments_counter = arguments_counter + 1
 
             return instruction_list, by[counter:]
+        elif by[counter].name == "SET_ADD":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            number_of_arguments = by[counter].arg
+            arguments_counter = 0
+            counter = counter + 1
+            while arguments_counter < number_of_arguments:
+                return_values = self.arguments_instructions(by[counter:])
+                try:
+                    instruction_list.extend(return_values[0])
+                except TypeError:
+                    instruction_list.append(return_values[0])
+                by = return_values[1]
+                counter = 0
+                arguments_counter = arguments_counter + 1
+
+            return instruction_list, by[counter:]
+        elif by[counter].name == "UNARY_NEGATIVE":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            counter = counter + 1
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            return instruction_list, by[counter:]
+        elif by[counter].name == "DUP_TOP":
+            return [], []
+        elif by[counter].name == "WITH_EXCEPT_START":
+            return [], []
+        elif by[counter].name == "BUILD_STRING":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            number_of_arguments = by[counter].arg
+            counter = counter + 1
+            arguments_counter = 0
+            while arguments_counter < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return [], []
+                return_values = self.arguments_instructions(by[counter:])
+                try:
+                    instruction_list.extend(return_values[0])
+                except TypeError:
+                    instruction_list.append(return_values[0])
+                by = return_values[1]
+                counter = 0
+                arguments_counter = arguments_counter + 1
+
+            return instruction_list, by[counter:]
+        elif by[counter].name == "FORMAT_VALUE":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            number_of_arguments = by[counter].arg
+            counter = counter + 1
+            arguments_counter = 0
+            while arguments_counter < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return [], []
+                return_values = self.arguments_instructions(by[counter:])
+                try:
+                    instruction_list.extend(return_values[0])
+                except TypeError:
+                    instruction_list.append(return_values[0])
+                by = return_values[1]
+                counter = 0
+                arguments_counter = arguments_counter + 1
+
+            if len(by) == counter:
+                return [], []
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            return instruction_list, by[counter:]
+        elif by[counter].name == "UNARY_NOT":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            counter = counter + 1
+
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            return instruction_list, by[counter:]
+        elif by[counter].name == "LIST_TO_TUPLE":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            counter = counter + 1
+            # First Part
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+
+            # Second Part
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            return instruction_list, by[counter:]
+        elif by[counter].name == "DICT_MERGE":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            counter = counter + 1
+            if len(by[counter:]) == 0:
+                return [], []
+            # First Part
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+
+            if len(by[counter:]) == 0:
+                return [], []
+            # Second Part
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+
+            return instruction_list, by[counter:]
+        elif by[counter].name == "UNPACK_SEQUENCE":
+            return [], []
+        elif by[counter].name == "DUP_TOP_TWO":
+            return [], []
         else:
             print("Arguments instructions not registered File Reader")
             print(by[counter])

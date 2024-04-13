@@ -54,6 +54,9 @@ class ClassObject:
     def set_constructor(self, function_object):
         self.constructor = function_object
 
+    def get_constructor(self):
+        return self.constructor
+
     def add_variable(self, variable_object):
         self.variables_list.append(variable_object)
 

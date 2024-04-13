@@ -4,7 +4,10 @@ import py_compile
 
 # This method compile a file
 def compile_file(path):
-    py_compile.compile(path)
+    try:
+        py_compile.compile(path)
+    except:
+        pass
 
 
 # This method compile all repository files

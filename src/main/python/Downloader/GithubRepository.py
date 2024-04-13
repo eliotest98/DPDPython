@@ -4,6 +4,7 @@ import shutil
 
 from git import Repo
 from Compiler import Compiler
+from Downloader.ProgressionCheck import Progress
 
 
 class GithubRepository:
@@ -27,9 +28,9 @@ class GithubRepository:
                 print("Directory is empty, downloading...")
                 print("Repository: " + self.repository_url)
                 if self.branch_name == "":
-                    Repo.clone_from(self.repository_url, self.folder)
+                    Repo.clone_from(self.repository_url, self.folder, progress=Progress())
                 else:
-                    Repo.clone_from(self.repository_url, self.folder, branch=self.branch_name)
+                    Repo.clone_from(self.repository_url, self.folder, branch=self.branch_name, progress=Progress())
                 print("Repository Downloaded!")
             else:
                 print("Directory is not empty")
@@ -40,12 +41,12 @@ class GithubRepository:
             print("Repository: " + self.repository_url)
             if self.branch_name == "":
                 try:
-                    Repo.clone_from(self.repository_url, self.folder)
+                    Repo.clone_from(self.repository_url, self.folder, progress=Progress())
                 except:
                     pass
             else:
                 try:
-                    Repo.clone_from(self.repository_url, self.folder, branch=self.branch_name)
+                    Repo.clone_from(self.repository_url, self.folder, branch=self.branch_name, progress=Progress())
                 except:
                     pass
             print("Repository Downloaded!")
@@ -73,14 +74,17 @@ class GithubRepository:
                     self.delete_file_unused(directory + "\\" + dir)
         else:
             if not directory.endswith(".py"):
-                os.remove(directory)
+                try:
+                    os.remove(directory)
+                except:
+                    pass
 
     def compile_repository_files(self):
         print("Compiling all files")
         Compiler.compile_repository_files(self.folder)
         print("Successfully Compiled!")
 
-    def delete_reporitory(self):
+    def delete_repository(self):
         print("Deleting Repository")
-        shutil.rmtree(self.folder)
+        shutil.rmtree(self.destination_folder + "\\" + self.repository_name)
         print("Successfully Deleted!")

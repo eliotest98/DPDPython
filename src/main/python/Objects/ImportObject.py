@@ -44,7 +44,7 @@ class ImportObject:
         internal_string_tabs = string_tabs + "\t"
         string_to_return = ""
         if self.from_name != "":
-            string_to_return = string_to_return + string_tabs + "<FROM>(id," + self.from_name + ")\n"
+            string_to_return = string_to_return + string_tabs + "<FROM>(id," + str(self.from_name) + ")\n"
             if len(self.string_list) != 0:
                 for string in self.string_list:
                     string_to_return = string_to_return + internal_string_tabs + "<IMPORT>(id," + str(

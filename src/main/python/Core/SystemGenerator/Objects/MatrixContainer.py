@@ -94,7 +94,14 @@ class MatrixContainer:
         self.method_invocations_matrix = method_invocations_matrix
 
     def __str__(self):
-        return "\nClass Name List: " + str(self.class_name_list) + \
-               "\nAssociation Matrix: " + str(self.association_matrix) + \
-               "\nGeneralization Matrix: " + str(self.generalization_matrix) + \
-               "\nInvoked Method in Inherited Method Matrix: " + str(self.invoked_method_in_inherited_method_matrix)
+        string_to_return = ""
+        if not isinstance(self.class_name_list, str):
+            string_to_return = string_to_return + "\nClass Name List: " + str(self.class_name_list)
+        if not isinstance(self.association_matrix, str):
+            string_to_return = string_to_return + "\nAssociation Matrix: \n" + self.association_matrix.to_string()
+        if not isinstance(self.generalization_matrix, str):
+            string_to_return = string_to_return + "\nGeneralization Matrix: \n" + self.generalization_matrix.to_string()
+        if not isinstance(self.invoked_method_in_inherited_method_matrix, str):
+            string_to_return = string_to_return + "\nInvoked Method In Inherited Method Matrix: \n" \
+                               + self.invoked_method_in_inherited_method_matrix.to_string()
+        return string_to_return

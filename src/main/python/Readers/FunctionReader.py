@@ -168,7 +168,16 @@ class FunctionReader:
 
                     copy = by[:i]
                     copy.reverse()
+                    if len(copy) == 0:
+                        i = i + 1
+                        continue
                     return_values = self.arguments_instructions(copy)
+                    try:
+                        if len(return_values[0]) == 0:
+                            i = i + 1
+                            continue
+                    except:
+                        pass
                     return_values = self.recursive_identification(return_values[0])
                     # Create an operation object
                     operation_object = return_values[0]
@@ -260,6 +269,12 @@ class FunctionReader:
                     copy = by[:i]
                     copy.reverse()
                     return_values = self.arguments_instructions(copy)
+                    try:
+                        if len(return_values[0]) == 0:
+                            i = i + 1
+                            continue
+                    except:
+                        pass
                     return_values = self.recursive_identification(return_values[0])
                     # Create an operation object
                     operation_object = return_values[0]
@@ -331,6 +346,8 @@ class FunctionReader:
                                 break
                             next_instructions.append(by[i])
                             i = i + 1
+                            if len(by) == i:
+                                break
 
                     # Create a false function object for get the instructions
                     false_function_object = FunctionObject()
@@ -356,6 +373,12 @@ class FunctionReader:
                     copy = by[:i]
                     copy.reverse()
                     return_values = self.arguments_instructions(copy)
+                    try:
+                        if len(return_values[0]) == 0:
+                            i = i + 1
+                            continue
+                    except:
+                        pass
                     return_values = self.recursive_identification(return_values[0])
                     # Create an operation object
                     operation_object = return_values[0]
@@ -393,6 +416,8 @@ class FunctionReader:
                                 break
                             next_instructions.append(by[i])
                             i = i + 1
+                            if len(by) == i:
+                                break
 
                     i = i + 1
 
@@ -541,18 +566,30 @@ class FunctionReader:
                         # Set the return value
                         function_object.set_return_object(return_object)
                     elif previous_instructions[0].name == "BINARY_MULTIPLY":
-                        variable = VariableObject()
-                        variable.set_type("Binary Multiply")
-                        variable.set_variable_name(by[i - 3].arg)
-                        variable.set_argument(by[i - 2].arg)
+                        copy = by[:i]
+                        copy.reverse()
+                        return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            return_object = ReturnObject()
+                            return_object.set_type("variable")
+                            function_object.set_return_object(return_object)
+                            i = i + 1
+                            continue
+                        return_values = self.recursive_identification(return_values[0])
                         return_object = ReturnObject()
-                        return_object.set_argument(variable)
-                        return_object.set_type("lambda")
+                        return_object.set_argument(return_values[0])
+                        return_object.set_type("variable")
                         function_object.set_return_object(return_object)
                     elif previous_instructions[0].name == "LOAD_ATTR":
                         copy = by[:i]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            return_object = ReturnObject()
+                            return_object.set_type("CallFunction")
+                            function_object.set_return_object(return_object)
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         return_object = ReturnObject()
                         return_object.set_argument(return_values[0])
@@ -562,6 +599,12 @@ class FunctionReader:
                         copy = by[:i]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            return_object = ReturnObject()
+                            return_object.set_type("Operation")
+                            function_object.set_return_object(return_object)
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         return_object = ReturnObject()
                         return_object.set_argument(return_values[0])
@@ -571,6 +614,12 @@ class FunctionReader:
                         copy = by[:i]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            return_object = ReturnObject()
+                            return_object.set_type("Operation")
+                            function_object.set_return_object(return_object)
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         return_object = ReturnObject()
                         return_object.set_argument(return_values[0])
@@ -581,6 +630,14 @@ class FunctionReader:
                             copy = by[:i - 2]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
+                            try:
+                                if len(return_values[0]) == 0:
+                                    return_object = ReturnObject()
+                                    function_object.set_return_object(return_object)
+                                    i = i + 1
+                                    continue
+                            except:
+                                pass
                             return_values = self.recursive_identification(return_values[0])
                             return_object = ReturnObject()
                             return_object.set_argument(return_values[0])
@@ -590,6 +647,13 @@ class FunctionReader:
                         copy = by[:i]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            return_object = ReturnObject()
+                            return_object.set_argument(return_values[0])
+                            return_object.set_type("BuildMap")
+                            function_object.set_return_object(return_object)
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         return_object = ReturnObject()
                         return_object.set_argument(return_values[0])
@@ -630,6 +694,12 @@ class FunctionReader:
                         copy = by[:i]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            return_object = ReturnObject()
+                            return_object.set_type("Operation")
+                            function_object.set_return_object(return_object)
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         return_object = ReturnObject()
                         return_object.set_argument(return_values[0])
@@ -639,6 +709,12 @@ class FunctionReader:
                         copy = by[:i]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            return_object = ReturnObject()
+                            return_object.set_type("Operation")
+                            function_object.set_return_object(return_object)
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         return_object = ReturnObject()
                         return_object.set_argument(return_values[0])
@@ -648,6 +724,12 @@ class FunctionReader:
                         copy = by[:i]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            return_object = ReturnObject()
+                            return_object.set_type("Operation")
+                            function_object.set_return_object(return_object)
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         return_object = ReturnObject()
                         return_object.set_argument(return_values[0])
@@ -657,6 +739,12 @@ class FunctionReader:
                         copy = by[:i]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            return_object = ReturnObject()
+                            return_object.set_type("Operation")
+                            function_object.set_return_object(return_object)
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         return_object = ReturnObject()
                         return_object.set_argument(return_values[0])
@@ -666,6 +754,15 @@ class FunctionReader:
                         copy = by[:i - 1]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        try:
+                            if len(return_values[0]) == 0:
+                                return_object = ReturnObject()
+                                return_object.set_type("CallFunction")
+                                function_object.set_return_object(return_object)
+                                i = i + 1
+                                continue
+                        except:
+                            pass
                         return_values = self.recursive_identification(return_values[0])
                         return_object = ReturnObject()
                         return_object.set_argument(return_values[0])
@@ -746,6 +843,9 @@ class FunctionReader:
                 case "CALL_FUNCTION_KW":
 
                     if len(by) != i + 1:
+                        if isinstance(by[i + 1], Label):
+                            i = i + 1
+                            continue
                         if by[i + 1].name != "POP_TOP":
                             i = i + 1
                             continue
@@ -803,7 +903,10 @@ class FunctionReader:
                     # Create a variable for store the condition
                     variable_condition = VariableObject()
 
-                    if previous_instruction[0].name == "CALL_FUNCTION":
+                    if isinstance(previous_instruction[0], Label):
+                        i = i + 1
+                        continue
+                    elif previous_instruction[0].name == "CALL_FUNCTION":
 
                         if not isinstance(by[i + 1], Label):
                             if by[i + 1].name == "STORE_NAME":
@@ -988,9 +1091,15 @@ class FunctionReader:
                     copy.reverse()
                     return_values = self.arguments_instructions(copy)
                     previous_instructions = return_values[0]
+                    if len(previous_instructions) == 0:
+                        i = i + 1
+                        continue
                     previous_instructions.remove(previous_instructions[0])
                     square_parenthesis = previous_instructions[0].arg
                     previous_instructions.remove(previous_instructions[0])
+                    if isinstance(previous_instructions[0], Label):
+                        i = i + 1
+                        continue
                     variable_name = previous_instructions[0].arg
                     previous_instructions.remove(previous_instructions[0])
 
@@ -1000,6 +1109,10 @@ class FunctionReader:
                     # Set the variable name
                     variable_object.set_variable_name(
                         str(variable_name) + "[" + str(square_parenthesis) + "]")
+
+                    if len(previous_instructions) == 0:
+                        i = i + 1
+                        continue
 
                     if isinstance(previous_instructions[0], Label):
                         i = i + 1
@@ -1016,7 +1129,10 @@ class FunctionReader:
                     elif previous_instructions[0].name == "CALL_METHOD":
 
                         if len(by) != i + 1:
-                            if by[i + 1].name == "CALL_FUNCTION":
+                            if isinstance(by[i + 1], Label):
+                                i = i + 1
+                                continue
+                            elif by[i + 1].name == "CALL_FUNCTION":
                                 i = i + 1
                                 continue
                             elif by[i + 1].name == "LOAD_METHOD":
@@ -1053,6 +1169,10 @@ class FunctionReader:
                         variable_object.set_type("CallFunction")
                     elif previous_instructions[0].name == "BINARY_ADD":
                         return_values = self.arguments_instructions(previous_instructions)
+                        if len(return_values[0]) == 0:
+                            variable_object.set_type("Operation")
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         variable_object.set_argument(return_values[0])
                         variable_object.set_type("Operation")
@@ -1086,6 +1206,11 @@ class FunctionReader:
                         return_values = self.recursive_identification(return_values[0])
                         variable_object.set_argument(return_values[0])
                         variable_object.set_type("variable")
+                    elif previous_instructions[0].name == "BUILD_TUPLE":
+                        return_values = self.arguments_instructions(previous_instructions)
+                        return_values = self.recursive_identification(return_values[0])
+                        variable_object.set_argument(return_values[0])
+                        variable_object.set_type("tuple")
                     else:
                         print("STORE_SUBSCR Not registered")
                         print(previous_instructions[0])
@@ -1117,54 +1242,60 @@ class FunctionReader:
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            if len(return_values[0]) != 0:
+                                return_values = self.recursive_identification(return_values[0])
+                                variable.set_argument(return_values[0])
                             variable.set_type("CallFunction")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         # Variable -> CallMethod STORE_FAST STORE_ATTR
                         elif previous_instructions[1].name == "CALL_METHOD":
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            if len(return_values[0]) != 0:
+                                return_values = self.recursive_identification(return_values[0])
+                                variable.set_argument(return_values[0])
                             variable.set_type("CallMethod")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         # Variable -> CallFunction STORE_FAST STORE_ATTR
                         elif previous_instructions[1].name == "CALL_FUNCTION_KW":
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            if len(return_values[0]) != 0:
+                                return_values = self.recursive_identification(return_values[0])
+                                variable.set_argument(return_values[0])
                             variable.set_type("CallFunction")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         # Variable -> BUILD_LIST STORE_FAST STORE_ATTR
                         elif previous_instructions[1].name == "BUILD_LIST":
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            if len(return_values[0]) != 0:
+                                return_values = self.recursive_identification(return_values[0])
+                                variable.set_argument(return_values[0])
                             variable.set_type("BuildList")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         # Variable -> BINARY_ADD STORE_FAST STORE_ATTR
                         elif previous_instructions[1].name == "BINARY_ADD":
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            if len(return_values[0]) != 0:
+                                return_values = self.recursive_identification(return_values[0])
+                                variable.set_argument(return_values[0])
                             variable.set_type("Operation")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         # Variable -> BUILD_CONST_KEY_MAP STORE_FAST STORE_ATTR
                         elif previous_instructions[1].name == "BUILD_CONST_KEY_MAP":
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            if len(return_values[0]) != 0:
+                                return_values = self.recursive_identification(return_values[0])
+                                variable.set_argument(return_values[0])
                             variable.set_type("BuildMap")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         # Variable -> LOAD_FAST STORE_FAST STORE_ATTR
                         elif previous_instructions[1].name == "LOAD_FAST":
@@ -1181,9 +1312,10 @@ class FunctionReader:
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            if len(return_values[0]) != 0:
+                                return_values = self.recursive_identification(return_values[0])
+                                variable.set_argument(return_values[0])
                             variable.set_type("variable")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         # Variable -> LOAD_ATTR STORE_FAST STORE_ATTR
                         elif previous_instructions[1].name == "UNPACK_SEQUENCE":
@@ -1195,6 +1327,8 @@ class FunctionReader:
                             variable_list = list()
                             while arguments_counter < number_of_arguments:
                                 variable_in_list = VariableObject()
+                                if counter_copy >= len(copy):
+                                    break
                                 if copy[counter_copy].name == "LOAD_FAST":
                                     counter_copy = counter_copy + 2
                                     real_copy = copy[:counter_copy]
@@ -1208,13 +1342,27 @@ class FunctionReader:
                                     real_copy = copy[:counter_copy]
                                     real_copy.reverse()
                                     return_values = self.arguments_instructions(real_copy)
+                                    try:
+                                        if len(return_values[0]) == 0:
+                                            i = i + 1
+                                            continue
+                                    except:
+                                        pass
+
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable_in_list.set_variable_name(return_values[0])
+                                    variable_in_list.set_type("variable")
+                                elif copy[counter_copy].name == "STORE_ATTR":
+                                    counter_copy = counter_copy + 2
+                                    real_copy = copy[:counter_copy]
+                                    real_copy.reverse()
+                                    return_values = self.arguments_instructions(real_copy)
                                     return_values = self.recursive_identification(return_values[0])
                                     variable_in_list.set_variable_name(return_values[0])
                                     variable_in_list.set_type("variable")
                                 else:
                                     print("Not registered UNPACK_SEQUENCE")
                                     print(copy[counter_copy])
-                                    exit(-1)
                                 variable_list.append(variable_in_list)
                                 arguments_counter = arguments_counter + 1
 
@@ -1250,77 +1398,113 @@ class FunctionReader:
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            try:
+                                if len(return_values[0]) != 0:
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable.set_argument(return_values[0])
+                            except:
+                                pass
                             variable.set_type("variable")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         # Variable -> BUILD_MAP STORE_FAST STORE_ATTR
                         elif previous_instructions[1].name == "BUILD_MAP":
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            try:
+                                if len(return_values[0]) != 0:
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable.set_argument(return_values[0])
+                            except:
+                                pass
                             variable.set_type("variable")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         # Variable -> CallFunction STORE_FAST STORE_ATTR
                         elif previous_instructions[1].name == "CALL_FUNCTION_EX":
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            try:
+                                if len(return_values[0]) != 0:
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable.set_argument(return_values[0])
+                            except:
+                                pass
                             variable.set_type("CallFunction")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         # Variable -> BINARY_SUBSCR STORE_FAST STORE_ATTR
                         elif previous_instructions[1].name == "BINARY_SUBSCR":
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            try:
+                                if len(return_values[0]) != 0:
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable.set_argument(return_values[0])
+                            except:
+                                pass
                             variable.set_type("CallFunction")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         # Variable -> BINARY_MODULO STORE_FAST STORE_ATTR
                         elif previous_instructions[1].name == "BINARY_MODULO":
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            try:
+                                if len(return_values[0]) != 0:
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable.set_argument(return_values[0])
+                            except:
+                                pass
                             variable.set_type("Operation")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         elif previous_instructions[1].name == "BINARY_FLOOR_DIVIDE":
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            try:
+                                if len(return_values[0]) != 0:
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable.set_argument(return_values[0])
+                            except:
+                                pass
                             variable.set_type("Operation")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         elif previous_instructions[1].name == "BINARY_MULTIPLY":
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            try:
+                                if len(return_values[0]) != 0:
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable.set_argument(return_values[0])
+                            except:
+                                pass
                             variable.set_type("Operation")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         elif previous_instructions[1].name == "BINARY_LSHIFT":
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            try:
+                                if len(return_values[0]) != 0:
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable.set_argument(return_values[0])
+                            except:
+                                pass
                             variable.set_type("Operation")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         elif previous_instructions[1].name == "LOAD_DEREF":
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            try:
+                                if len(return_values[0]) != 0:
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable.set_argument(return_values[0])
+                            except:
+                                pass
                             variable.set_type("variable")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         elif previous_instructions[1].name == "ROT_TWO":
                             # Skipping...
@@ -1330,25 +1514,37 @@ class FunctionReader:
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            try:
+                                if len(return_values[0]) != 0:
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable.set_argument(return_values[0])
+                            except:
+                                pass
                             variable.set_type("variable")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         elif previous_instructions[1].name == "BUILD_TUPLE":
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            try:
+                                if len(return_values[0]) != 0:
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable.set_argument(return_values[0])
+                            except:
+                                pass
                             variable.set_type("variable")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         elif previous_instructions[1].name == "DICT_UPDATE":
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            try:
+                                if len(return_values[0]) != 0:
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable.set_argument(return_values[0])
+                            except:
+                                pass
                             variable.set_type("variable")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         elif previous_instructions[1].name == "DUP_TOP":
                             variable.set_type("variable")
@@ -1360,27 +1556,73 @@ class FunctionReader:
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            try:
+                                if len(return_values[0]) != 0:
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable.set_argument(return_values[0])
+                            except:
+                                pass
                             variable.set_type("variable")
-                            variable.set_argument(return_values[0])
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         elif previous_instructions[1].name == "BINARY_SUBTRACT":
                             copy = by[:i - 1]
                             copy.reverse()
                             return_values = self.arguments_instructions(copy)
-                            return_values = self.recursive_identification(return_values[0])
+                            try:
+                                if len(return_values[0]) != 0:
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable.set_argument(return_values[0])
+                            except:
+                                pass
                             variable.set_type("variable")
-                            variable.set_argument(return_values[0])
+                            variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
+                        elif previous_instructions[1].name == "STORE_FAST":
+                            copy = by[:i - 1]
+                            copy.reverse()
+                            return_values = self.arguments_instructions(copy)
+                            try:
+                                if len(return_values[0]) != 0:
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable.set_argument(return_values[0])
+                            except:
+                                pass
+                            variable.set_type("variable")
+                            variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
+                        elif previous_instructions[1].name.__contains__("_OP"):
+                            copy = by[:i - 1]
+                            copy.reverse()
+                            return_values = self.arguments_instructions(copy)
+                            try:
+                                if len(return_values[0]) != 0:
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable.set_argument(return_values[0])
+                            except:
+                                pass
+                            variable.set_type("Operation")
+                            variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
+                        elif previous_instructions[1].name == "UNARY_NOT":
+                            copy = by[:i - 1]
+                            copy.reverse()
+                            return_values = self.arguments_instructions(copy)
+                            try:
+                                if len(return_values[0]) != 0:
+                                    return_values = self.recursive_identification(return_values[0])
+                                    variable.set_argument(return_values[0])
+                            except:
+                                pass
+                            variable.set_type("Operation")
                             variable.set_variable_name(previous_instructions[0].arg + "." + instruction.arg)
                         else:
                             print("LOAD_FAST Function Reader not registered")
                             print(previous_instructions[1])
-                            exit(-1)
                         # Add variabile at variable list of class
                         function_object.add_variable(variable)
                     elif previous_instructions[0].name == "LOAD_GLOBAL":
                         previous_instructions.append(by[i - 2])
-                        if previous_instructions[1].name == "CALL_FUNCTION":
+                        if isinstance(previous_instructions[1], Label):
+                            i = i + 1
+                            continue
+                        elif previous_instructions[1].name == "CALL_FUNCTION":
                             variable_name = previous_instructions[0].arg + "." + instruction.arg
                             previous_instructions = list()
                             count = i - 1
@@ -1431,6 +1673,13 @@ class FunctionReader:
                         variable.set_variable_name(return_values[0])
 
                         return_values = self.arguments_instructions(raw_arguments_instructions)
+                        try:
+                            if len(return_values[0]) == 0:
+                                function_object.add_variable(variable)
+                                i = i + 1
+                                continue
+                        except:
+                            pass
                         return_values = self.recursive_identification(return_values[0])
 
                         variable.set_argument(return_values[0])
@@ -1468,6 +1717,10 @@ class FunctionReader:
 
                         return_values = self.recursive_identification(return_values[0])
                         argument = return_values[0]
+
+                        if len(some_info) == 0:
+                            i = i + 1
+                            continue
 
                         return_values = self.arguments_instructions(some_info)
                         return_values = self.recursive_identification(return_values[0])
@@ -1527,6 +1780,16 @@ class FunctionReader:
                         copy = by[:i]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            # Create a variable object
+                            variable = VariableObject()
+                            # The current instruction contains the name of variable
+                            variable.set_variable_name(instruction.arg)
+                            variable.set_type("BuildMap")
+                            # Add the variable at variables list:
+                            function_object.add_variable(variable)
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         # Create a variable object
                         variable = VariableObject()
@@ -1636,6 +1899,10 @@ class FunctionReader:
                         copy = by[:i]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            function_object.add_variable(variable_object)
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         variable_object.set_argument(return_values[0])
                         function_object.add_variable(variable_object)
@@ -1693,6 +1960,10 @@ class FunctionReader:
                         copy = by[:i]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            function_object.add_variable(variable)
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         variable.set_argument(return_values[0])
                         function_object.add_variable(variable)
@@ -1706,6 +1977,10 @@ class FunctionReader:
                         copy = by[:i]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            function_object.add_variable(variable)
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         variable.set_argument(return_values[0])
                         function_object.add_variable(variable)
@@ -1819,6 +2094,10 @@ class FunctionReader:
                         copy = by[:i]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            function_object.add_variable(variable)
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         variable.set_argument(return_values[0])
                         function_object.add_variable(variable)
@@ -1875,6 +2154,13 @@ class FunctionReader:
                         copy = by[:i - 1]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        try:
+                            if len(return_values[0]) == 0:
+                                function_object.add_variable(variable)
+                                i = i + 1
+                                continue
+                        except:
+                            pass
                         return_values = self.recursive_identification(return_values[0])
                         variable.set_argument(return_values[0])
                         function_object.add_variable(variable)
@@ -1940,6 +2226,10 @@ class FunctionReader:
                         copy = by[:i]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            function_object.add_variable(variable)
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         variable.set_argument(return_values[0])
                         function_object.add_variable(variable)
@@ -1959,6 +2249,9 @@ class FunctionReader:
                     elif previous_instructions[0].name == "ROT_TWO":
                         copy = by[:i - 1]
                         copy.reverse()
+                        if len(copy) == 0:
+                            i = i + 1
+                            continue
                         return_values = self.arguments_instructions(copy)
 
                         some_info = return_values[1]
@@ -2043,6 +2336,8 @@ class FunctionReader:
             elif by[counter].name == "LOAD_ATTR" or by[counter].name == "STORE_ATTR":
                 second_value = by[counter].arg
                 counter = counter + 1
+                if len(by[counter:]) == 0:
+                    return str(second_value), []
                 return_values = self.recursive_identification(by[counter:])
                 first_value = return_values[0]
                 by = return_values[1]
@@ -2050,10 +2345,14 @@ class FunctionReader:
                 return str(first_value) + "." + str(second_value), by[counter:]
             elif by[counter].name == "BINARY_SUBSCR":
                 counter = counter + 1
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 return_values = self.recursive_identification(by[counter:])
                 value_internal = return_values[0]
                 by = return_values[1]
                 counter = 0
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 return_values = self.recursive_identification(by[counter:])
                 path = return_values[0]
                 by = return_values[1]
@@ -2076,6 +2375,8 @@ class FunctionReader:
 
                 # Parameters
                 while counter_arguments < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return call_function, []
                     return_values = self.recursive_identification(by[counter:])
                     call_function.add_parameter(return_values[0])
                     by = return_values[1]
@@ -2100,12 +2401,16 @@ class FunctionReader:
 
                 # Parameters
                 while counter_arguments < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return call_function, []
                     return_values = self.recursive_identification(by[counter:])
                     call_function.add_parameter(return_values[0])
                     by = return_values[1]
                     counter = 0
                     counter_arguments = counter_arguments + 1
 
+                if len(by[counter:]) == 0:
+                    return call_function, []
                 return_values = self.recursive_identification(by[counter:])
                 call_function.set_method_name(return_values[0])
                 by = return_values[1]
@@ -2121,6 +2426,8 @@ class FunctionReader:
 
                 # Parameters
                 while counter_arguments < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     return_values = self.recursive_identification(by[counter:])
                     call_function.add_parameter(return_values[0])
                     by = return_values[1]
@@ -2137,6 +2444,8 @@ class FunctionReader:
                     by = return_values[1]
                     counter = 0
 
+                if len(by[counter:]) == 0:
+                    return call_function, []
                 # Path of method
                 return_values = self.recursive_identification(by[counter:])
                 path = call_function.path
@@ -2164,6 +2473,8 @@ class FunctionReader:
 
                 # Parameters
                 while counter_arguments < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     return_values = self.recursive_identification(by[counter:])
                     parameter = return_values[0]
                     if parameter is None:
@@ -2199,6 +2510,9 @@ class FunctionReader:
                 counter = 0
                 sum = " + " + str(return_values[0])
 
+                if len(by[counter:]) == 0:
+                    return "Skip", []
+
                 # Second Operand
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
@@ -2210,13 +2524,16 @@ class FunctionReader:
                 counter = counter + 1
 
                 if len(by[counter:]) == 0:
-                    return "[" + "]", []
+                    return "Skip", []
 
                 # First Operand
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
                 counter = 0
                 subtract = " - " + str(return_values[0])
+
+                if len(by[counter:]) == 0:
+                    return "Skip", []
 
                 # Second Operand
                 return_values = self.recursive_identification(by[counter:])
@@ -2228,12 +2545,16 @@ class FunctionReader:
             elif by[counter].name == "BINARY_TRUE_DIVIDE":
                 counter = counter + 1
 
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # First Operand
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
                 counter = 0
                 division = " / " + str(return_values[0])
 
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # Second Operand
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
@@ -2263,11 +2584,15 @@ class FunctionReader:
                 arguments_counter = 0
                 list_values = "{"
                 while arguments_counter < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     # Value
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
                     counter = 0
                     value = return_values[0]
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     # Key
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
@@ -2284,6 +2609,8 @@ class FunctionReader:
                 arguments_counter = 0
                 arguments = ""
                 while arguments_counter < number_of_elements:
+                    if len(by[counter:]) == 0:
+                        return "", []
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
                     counter = 0
@@ -2319,6 +2646,9 @@ class FunctionReader:
                 operation_object = OperationObject()
                 operation_object.set_operation_type(operation_name)
                 counter = counter + 1
+
+                if len(by[counter:]) == 0:
+                    return operation_object, []
                 # First Operand
                 return_values = self.recursive_identification(by[counter:])
                 operation_object.set_first_operand(return_values[0])
@@ -2341,6 +2671,11 @@ class FunctionReader:
                 counter_arguments = 0
                 raw_map = "{"
                 while counter_arguments < number_of_arguments:
+                    try:
+                        if len(by[counter:]) == 0:
+                            return "", []
+                    except:
+                        pass
                     return_values = self.recursive_identification(by[counter:])
                     raw_map = raw_map + str(arguments_list[counter_arguments]) + ":" + str(return_values[0]) + ","
                     by = return_values[1]
@@ -2354,6 +2689,8 @@ class FunctionReader:
                 arguments_counter = 0
                 list_values = "("
                 while arguments_counter < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
                     counter = 0
@@ -2380,6 +2717,8 @@ class FunctionReader:
                 return list_values, by[counter:]
             elif by[counter].name == "INPLACE_ADD":
                 counter = counter + 1
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 return_values = self.recursive_identification(by[counter:])
                 value = return_values[0]
                 by = return_values[1]
@@ -2387,6 +2726,8 @@ class FunctionReader:
                 return value, by[counter:]
             elif by[counter].name == "INPLACE_AND":
                 counter = counter + 1
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 return_values = self.recursive_identification(by[counter:])
                 value = return_values[0]
                 by = return_values[1]
@@ -2394,6 +2735,8 @@ class FunctionReader:
                 return value, by[counter:]
             elif by[counter].name == "INPLACE_TRUE_DIVIDE":
                 counter = counter + 1
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 return_values = self.recursive_identification(by[counter:])
                 value = return_values[0]
                 by = return_values[1]
@@ -2401,6 +2744,8 @@ class FunctionReader:
                 return value, by[counter:]
             elif by[counter].name == "INPLACE_SUBTRACT":
                 counter = counter + 1
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 return_values = self.recursive_identification(by[counter:])
                 value = return_values[0]
                 by = return_values[1]
@@ -2408,6 +2753,17 @@ class FunctionReader:
                 return value, by[counter:]
             elif by[counter].name == "INPLACE_XOR":
                 counter = counter + 1
+                if len(by[counter:]) == 0:
+                    return "Skip", []
+                return_values = self.recursive_identification(by[counter:])
+                value = return_values[0]
+                by = return_values[1]
+                counter = 0
+                return value, by[counter:]
+            elif by[counter].name == "INPLACE_OR":
+                counter = counter + 1
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 return_values = self.recursive_identification(by[counter:])
                 value = return_values[0]
                 by = return_values[1]
@@ -2415,6 +2771,8 @@ class FunctionReader:
                 return value, by[counter:]
             elif by[counter].name == "INPLACE_MULTIPLY":
                 counter = counter + 1
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 return_values = self.recursive_identification(by[counter:])
                 value = return_values[0]
                 by = return_values[1]
@@ -2459,6 +2817,8 @@ class FunctionReader:
                 by = return_values[1]
                 counter = 0
                 module = " % " + str(module)
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # Second Part
                 return_values = self.recursive_identification(by[counter:])
                 module = str(return_values[0]) + module
@@ -2474,7 +2834,9 @@ class FunctionReader:
                 # Create a variable for store the condition
                 variable_condition = VariableObject()
 
-                if by[counter].name == "CALL_FUNCTION":
+                if isinstance(by[counter], Label):
+                    return "Skip", []
+                elif by[counter].name == "CALL_FUNCTION":
 
                     return_values = self.recursive_identification(by[counter:])
 
@@ -2513,11 +2875,11 @@ class FunctionReader:
                 by = return_values[1]
                 counter = 0
                 if not isinstance(value, FunctionObject):
-                    if value.__contains__("<"):
-                        value = value.removeprefix("<")
-                        value = value.removesuffix(">")
-                    variable_condition.set_type(str(type(value).__name__))
-                    variable_condition.set_variable_name(value)
+                    if str(value).__contains__("<"):
+                        value = str(value).removeprefix("<")
+                        value = str(value).removesuffix(">")
+                    variable_condition.set_type("variable")
+                    variable_condition.set_variable_name(str(value))
                 cicle_object.set_condition(variable_condition)
                 return cicle_object, by[counter:]
             elif by[counter].name == "MAKE_FUNCTION":
@@ -2559,6 +2921,8 @@ class FunctionReader:
                 arguments = arguments.removesuffix(",")
                 operation_object.set_second_operand(arguments)
 
+                if len(by[counter:]) == 0:
+                    return operation_object, []
                 # Second Part
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
@@ -2629,6 +2993,21 @@ class FunctionReader:
                 by = return_values[1]
                 counter = 0
                 return operation_object, by[counter:]
+            elif by[counter].name == "BINARY_OR":
+                counter = counter + 1
+                operation_object = OperationObject()
+                operation_object.set_operation_type("OR")
+                # Left Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_first_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                # Right Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_second_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                return operation_object, by[counter:]
             elif by[counter].name == "BINARY_LSHIFT":
                 counter = counter + 1
                 operation_object = OperationObject()
@@ -2646,6 +3025,17 @@ class FunctionReader:
                 return operation_object, by[counter:]
             elif by[counter].name == "UNARY_NEGATIVE":
                 operation_name = "Unary Negative"
+                operation_object = OperationObject()
+                operation_object.set_operation_type(operation_name)
+                counter = counter + 1
+                # Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_second_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                return operation_object, by[counter:]
+            elif by[counter].name == "UNARY_POSITIVE":
+                operation_name = "Unary Positive"
                 operation_object = OperationObject()
                 operation_object.set_operation_type(operation_name)
                 counter = counter + 1
@@ -2691,6 +3081,8 @@ class FunctionReader:
                 arguments_counter = 0
                 arguments = ""
                 while arguments_counter < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
                     counter = 0
@@ -2788,12 +3180,58 @@ class FunctionReader:
                 counter = 0
                 subtract = str(return_values[0]) + subtract
                 return subtract, by[counter:]
+            elif by[counter].name == "BINARY_MATRIX_MULTIPLY":
+                counter = counter + 1
+                operation_object = OperationObject()
+                operation_object.set_operation_type("MATRIX MULTIPLY")
+                # Left Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_first_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                # Right Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_second_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                return operation_object, by[counter:]
             elif by[counter].name == "ROT_TWO":
                 counter = counter + 1
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
                 counter = 0
                 return return_values[0], by[counter:]
+            elif by[counter].name == "LIST_APPEND":
+                number_of_arguments = by[counter].arg
+                counter = counter + 1
+                arguments_counter = 0
+                arguments = ""
+                while arguments_counter < number_of_arguments:
+                    return_values = self.recursive_identification(by[counter:])
+                    by = return_values[1]
+                    counter = 0
+                    arguments = arguments + str(return_values[0]) + ","
+                    arguments_counter = arguments_counter + 1
+
+                arguments = arguments.removesuffix(",")
+                return arguments, by[counter:]
+            elif by[counter].name == "UNARY_NOT":
+                counter = counter + 1
+                operation_object = OperationObject()
+                operation_object.set_operation_type("UNARY NOT")
+
+                # Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_first_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                return operation_object, by[counter:]
+            elif by[counter].name == "UNPACK_SEQUENCE":
+                return "", []
+            elif by[counter].name == "STORE_SUBSCR":
+                return "Skip", []
             else:
                 print("Recursive identification not registered Function Reader")
                 print(by[counter])
@@ -2822,7 +3260,7 @@ class FunctionReader:
             while not isinstance(by[counter], Label):
                 instruction_list.append(by[counter])
                 counter = counter + 1
-                if len(by) == counter + 1:
+                if len(by) < counter + 1:
                     break
                 if isinstance(by[counter], Label):
                     internal_raw_label = str(by[counter]).removeprefix(
@@ -2842,6 +3280,11 @@ class FunctionReader:
                         break
                     instruction_list.append(by[counter])
                     counter = counter + 1
+                    if counter >= len(by):
+                        break
+
+            if len(by) < counter + 1:
+                return [], []
 
             if isinstance(by[counter], Label):
                 return [], []
@@ -2876,6 +3319,8 @@ class FunctionReader:
             instruction_list = list()
             instruction_list.append(by[counter])
             counter = counter + 1
+            if len(by[counter:]) == 0:
+                return [], []
             return_values = self.arguments_instructions(by[counter:])
             try:
                 instruction_list.extend(return_values[0])
@@ -2891,6 +3336,8 @@ class FunctionReader:
             counter = counter + 1
             arguments_counter = 0
             while arguments_counter < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return [], []
                 # Value
                 return_values = self.arguments_instructions(by[counter:])
                 try:
@@ -2899,6 +3346,8 @@ class FunctionReader:
                     instruction_list.append(return_values[0])
                 by = return_values[1]
                 counter = 0
+                if len(by[counter:]) == 0:
+                    return [], []
                 # Key
                 return_values = self.arguments_instructions(by[counter:])
                 try:
@@ -2951,10 +3400,13 @@ class FunctionReader:
             return instruction_list, by[counter:]
         elif by[counter].name == "BINARY_SUBSCR" or by[counter].name == "BINARY_ADD" \
                 or by[counter].name == "BINARY_SUBTRACT" or by[counter].name == "BINARY_MULTIPLY" \
-                or by[counter].name == "BINARY_TRUE_DIVIDE" or by[counter].name == "BINARY_FLOOR_DIVIDE":
+                or by[counter].name == "BINARY_TRUE_DIVIDE" or by[counter].name == "BINARY_FLOOR_DIVIDE" \
+                or by[counter].name == "BINARY_MATRIX_MULTIPLY":
             instruction_list = list()
             instruction_list.append(by[counter])
             counter = counter + 1
+            if counter >= len(by):
+                return [], []
             if isinstance(by[counter], Label):
                 return instruction_list, by[counter:]
             return_values = self.arguments_instructions(by[counter:])
@@ -2964,6 +3416,8 @@ class FunctionReader:
                 instruction_list.append(return_values[0])
             by = return_values[1]
             counter = 0
+            if len(by[counter:]) == 0:
+                return [], []
             return_values = self.arguments_instructions(by[counter:])
             try:
                 instruction_list.extend(return_values[0])
@@ -2986,6 +3440,8 @@ class FunctionReader:
             by = return_values[1]
             counter = 0
 
+            if len(by[counter:]) == 0:
+                return [], []
             # Body
             return_values = self.arguments_instructions(by[counter:])
             try:
@@ -3101,6 +3557,8 @@ class FunctionReader:
             counter = counter + 1
             arguments_counter = 0
             while arguments_counter < number_of_elements:
+                if len(by) == 0:
+                    return [], []
                 return_values = self.arguments_instructions(by[counter:])
                 try:
                     instruction_list.extend(return_values[0])
@@ -3180,6 +3638,8 @@ class FunctionReader:
             # LOAD_CONST Instruction
             instruction_list.append(by[counter])
             counter = counter + 1
+            if counter >= len(by):
+                return [], []
             # LOAD_NAME Instruction
             instruction_list.append(by[counter])
             counter = counter + 1
@@ -3223,6 +3683,8 @@ class FunctionReader:
             arguments_counter = 0
             # Arguments
             while arguments_counter < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return [], []
                 return_values = self.arguments_instructions(by[counter:])
                 try:
                     instruction_list.extend(return_values[0])
@@ -3252,6 +3714,10 @@ class FunctionReader:
                 instruction_list.append(return_values[0])
             by = return_values[1]
             counter = 0
+
+            if len(by[counter:]) == 0:
+                return [], []
+
             # Second Part
             return_values = self.arguments_instructions(by[counter:])
             try:
@@ -3346,6 +3812,18 @@ class FunctionReader:
             by = return_values[1]
             counter = 0
             return instruction_list, by[counter:]
+        elif by[counter].name == "INPLACE_OR":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            counter = counter + 1
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            return instruction_list, by[counter:]
         elif by[counter].name == "INPLACE_MULTIPLY":
             instruction_list = list()
             instruction_list.append(by[counter])
@@ -3359,6 +3837,18 @@ class FunctionReader:
             counter = 0
             return instruction_list, by[counter:]
         elif by[counter].name == "UNARY_NEGATIVE":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            counter = counter + 1
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            return instruction_list, by[counter:]
+        elif by[counter].name == "UNARY_POSITIVE":
             instruction_list = list()
             instruction_list.append(by[counter])
             counter = counter + 1
@@ -3455,6 +3945,8 @@ class FunctionReader:
             instruction_list = list()
             instruction_list.append(by[counter])
             counter = counter + 1
+            if len(by[counter:]) == 0:
+                return [], []
             # First Part
             return_values = self.arguments_instructions(by[counter:])
             try:
@@ -3464,6 +3956,8 @@ class FunctionReader:
             by = return_values[1]
             counter = 0
 
+            if len(by[counter:]) == 0:
+                return [], []
             # Second Part
             return_values = self.arguments_instructions(by[counter:])
             try:
@@ -3576,6 +4070,8 @@ class FunctionReader:
             counter = counter + 1
             arguments_counter = 0
             while arguments_counter < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return [], []
                 return_values = self.arguments_instructions(by[counter:])
                 try:
                     instruction_list.extend(return_values[0])
@@ -3593,6 +4089,8 @@ class FunctionReader:
             counter = counter + 1
             arguments_counter = 0
             while arguments_counter < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return [], []
                 return_values = self.arguments_instructions(by[counter:])
                 try:
                     instruction_list.extend(return_values[0])
@@ -3750,6 +4248,34 @@ class FunctionReader:
             return instruction_list, by[counter:]
         elif by[counter].name == "GEN_START":
             # Skipping ...
+            return [], []
+        elif by[counter].name == "FOR_ITER":
+            return [], []
+        elif by[counter].name.__contains__("JUMP_IF_"):
+            return [], []
+        elif by[counter].name == "POP_BLOCK":
+            return [], []
+        elif by[counter].name == "WITH_EXCEPT_START":
+            return [], []
+        elif by[counter].name.__contains__("DELETE_"):
+            return [], []
+        elif by[counter].name == "POP_JUMP_IF_TRUE":
+            return [], []
+        elif by[counter].name == "POP_EXCEPT":
+            return [], []
+        elif by[counter].name == "SETUP_FINALLY":
+            return [], []
+        elif by[counter].name == "YIELD_FROM":
+            return [], []
+        elif by[counter].name == "YIELD_VALUE":
+            return [], []
+        elif by[counter].name == "RETURN_VALUE":
+            return [], []
+        elif by[counter].name.__contains__("MATCH_"):
+            return [], []
+        elif by[counter].name == "END_ASYNC_FOR":
+            return [], []
+        elif by[counter].name == "GET_LEN":
             return [], []
         else:
             print("Arguments instructions not registered")
