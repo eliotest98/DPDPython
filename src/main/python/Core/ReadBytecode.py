@@ -3,6 +3,7 @@ import os
 
 from bytecode import bytecode
 
+from Downloader.ProgressionCheck import ProgressDetection
 from Objects.FileObject import FileObject
 from Objects.SystemObject import SystemObject
 from Readers.FileReader import FileReader
@@ -11,21 +12,27 @@ from Readers.FileReader import FileReader
 class ReadBytecode:
     debug_active = 0
     system_object = ""
+    progressor = ProgressDetection()
 
     def __init__(self, debug_active):
         self.debug_active = debug_active
+        self.progressor = ProgressDetection()
         if self.debug_active == 1:
             print("Reading Bytecode...")
         self.system_object = SystemObject()
 
-    def select_file(self, current_directory, resource_directory):
+    def select_file(self, current_directory, resource_directory, terminal):
         if os.path.isdir(current_directory):
+            counter = 1
             for directory in os.listdir(current_directory):
+                self.progressor.update(len(os.listdir(current_directory)), counter, "Reading bytecode...", terminal)
                 if os.path.isdir(current_directory + "\\" + directory):
-                    self.select_file(current_directory + "\\" + directory, resource_directory + "\\" + directory)
+                    self.select_file(current_directory + "\\" + directory, resource_directory + "\\" + directory,
+                                     terminal)
                 else:
                     if directory.__contains__(".pyc"):
-                        self.select_file(current_directory + "\\" + directory, resource_directory)
+                        self.select_file(current_directory + "\\" + directory, resource_directory, terminal)
+                counter = counter + 1
         else:
             if os.path.isfile(current_directory):
                 if self.debug_active == 1:
@@ -87,13 +94,18 @@ class ReadBytecode:
         try:
             os.makedirs(save_directory)
         except OSError as error:
-            print()
+            pass
 
         if save_directory.__contains__("__pycache__"):
             save_directory = save_directory.replace("\\__pycache__", "")
-        # Write on a file the Abstract Syntax Tree
-        with open(save_directory + "\\" + file_name.replace(".py", "") + ".xml", "w") as f:
-            f.write(ast)
+        try:
+            # Write on a file the Abstract Syntax Tree
+            with open(save_directory + "\\" + file_name.replace(".py", "") + ".xml", "w", encoding='utf-8') as f:
+                f.write(ast)
+        except UnicodeEncodeError:
+            # Write on a file the Abstract Syntax Tree
+            with open(save_directory + "\\" + file_name.replace(".py", "") + ".xml", "w", encoding='utf-16') as f:
+                f.write(ast.encode('utf-16', 'surrogatepass').decode('utf-16'))
 
     def get_system_object(self):
         return self.system_object

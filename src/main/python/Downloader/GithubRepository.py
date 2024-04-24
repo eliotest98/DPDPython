@@ -4,27 +4,34 @@ import shutil
 
 from git import Repo
 from Compiler import Compiler
+from Downloader.ProgressionCheck import Progress
 
 
 class GithubRepository:
     repository_name = ""
     destination_folder = ""
     repository_url = ""
+    branch_name = ""
     folder = ""
 
-    def __init__(self, repository_name, destination_folder):
+    def __init__(self, repository_name, destination_folder, branch_name):
         self.repository_name = repository_name
         self.destination_folder = destination_folder
         self.repository_url = "https://github.com/" + repository_name
         split_name = repository_name.split("/")
         self.folder = destination_folder + "\\" + split_name[0] + "\\" + split_name[1] + "\\Source"
+        self.branch_name = branch_name
 
     def download_repository(self):
         if os.path.isdir(self.folder):
             if not os.listdir(self.folder):
                 print("Directory is empty, downloading...")
                 print("Repository: " + self.repository_url)
-                Repo.clone_from(self.repository_url, self.folder)
+                if self.branch_name == "":
+                    Repo.clone_from(self.repository_url, self.folder, progress=Progress())
+                else:
+                    Repo.clone_from(self.repository_url, self.folder, branch=self.branch_name,
+                                    progress=Progress())
                 print("Repository Downloaded!")
             else:
                 print("Directory is not empty")
@@ -33,7 +40,17 @@ class GithubRepository:
         else:
             print("Directory not exist, downloading...")
             print("Repository: " + self.repository_url)
-            Repo.clone_from(self.repository_url, self.folder)
+            if self.branch_name == "":
+                try:
+                    Repo.clone_from(self.repository_url, self.folder, progress=Progress())
+                except:
+                    pass
+            else:
+                try:
+                    Repo.clone_from(self.repository_url, self.folder, branch=self.branch_name,
+                                    progress=Progress())
+                except:
+                    pass
             print("Repository Downloaded!")
 
     def change_permissions(self):
@@ -59,14 +76,17 @@ class GithubRepository:
                     self.delete_file_unused(directory + "\\" + dir)
         else:
             if not directory.endswith(".py"):
-                os.remove(directory)
+                try:
+                    os.remove(directory)
+                except:
+                    pass
 
-    def compile_repository_files(self):
+    def compile_repository_files(self, terminal):
         print("Compiling all files")
-        Compiler.compile_repository_files(self.folder)
+        Compiler.compile_repository_files(self.folder, terminal)
         print("Successfully Compiled!")
 
-    def delete_reporitory(self):
+    def delete_repository(self):
         print("Deleting Repository")
-        shutil.rmtree(self.folder)
+        shutil.rmtree(self.destination_folder + "\\" + self.repository_name)
         print("Successfully Deleted!")

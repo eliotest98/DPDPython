@@ -1,4 +1,8 @@
 class Position:
+    row = ""
+    column = ""
+    hash = ""
+
     def __init__(self, x, y):
         self.row = x
         self.column = y
@@ -17,6 +21,9 @@ class Position:
 
 
 class BehavioralData:
+    method_data = {}
+    field_data = {}
+
     def __init__(self):
         self.method_data = {}
         self.field_data = {}

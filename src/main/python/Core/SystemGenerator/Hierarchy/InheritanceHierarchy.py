@@ -59,7 +59,12 @@ class InheritanceHierarchy:
     @staticmethod
     def breadth_first_enumeration(node):
         nodes = [node]
+        visited = set()
         for node in nodes:
-            yield node
-            if 'children' in node:
-                nodes.extend(node['children'])
+            node_id = node['userObject']  # Presumendo che 'id' sia un campo univoco per ogni nodo
+            if node_id not in visited:
+                visited.add(node_id)
+                yield node
+                if 'children' in node:
+                    nodes.extend(child for child in node['children'] if child['userObject'] not in visited)
+

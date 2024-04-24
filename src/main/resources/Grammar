@@ -24,14 +24,22 @@ ImportList -> Import ImportList |
               Import |
               /* empty */
 
-Variable -> LOAD_CONST STORE_NAME                           |
-            LOAD_NAME STORE_NAME                            |
-            LOAD_CONST LOAD_CONST BUILD_MAP STORE_NAME      |
-            BUILD_LIST LOAD_CONST LIST_EXTEND STORE_NAME    |
-            BUILD_SET LOAD_CONST SET_UPDATE STORE_NAME      |
-            CallMethod STORE_NAME                           |
-            CallFunction STORE_NAME                         |
-            Cicle STORE_NAME                                 Questa sa da vedere e da fare
+Variable -> LOAD_CONST STORE_NAME                               |
+            LOAD_NAME STORE_NAME                                |
+            CallFunction LOAD_NAME STORE_ATTR                   |
+            LOAD_CONST LOAD_CONST BUILD_MAP STORE_NAME          |
+            BUILD_LIST LOAD_CONST LIST_EXTEND STORE_NAME        |
+            BUILD_SET LOAD_CONST SET_UPDATE STORE_NAME          |
+            CallMethod STORE_NAME                               |
+            CallFunction STORE_NAME                             |
+            Cicle STORE_NAME                                    |
+            LOAD_CONST LOAD_NAME LOAD_CONST STORE_SUBSCR        |
+            LOAD_NAME LOAD_NAME LOAD_CONST STORE_SUBSCR         |
+            CallFunction LOAD_NAME LOAD_CONST STORE_SUBSCR      |
+            CallMethod LOAD_NAME LOAD_CONST STORE_SUBSCR        |
+            Cicle LOAD_NAME LOAD_CONST STORE_SUBSCR
+
+
 
 Import -> LOAD_CONST LOAD_CONST IMPORT_NAME STORE_NAME             |
           LOAD_CONST LOAD_CONST IMPORT_NAME IMPORT_FROM STORE_NAME
@@ -42,9 +50,10 @@ Function -> LOAD_CONST(BodyFunction) LOAD_CONST MAKE_FUNCTION STORE_NAME |
 
 BodyFunction -> ImportList VariableList InstructionList ReturnValue
 
-ReturnValue -> LOAD_CONST RETURN_VALUE |
-               LOAD_FAST RETURN_VALUE  |
-               CallMethod RETURN_VALUE
+ReturnValue -> LOAD_CONST RETURN_VALUE  |
+               LOAD_FAST RETURN_VALUE   |
+               CallMethod RETURN_VALUE  |
+               CallFunction RETURN_VALUE
 
 Variable(Function) -> LOAD_CONST STORE_FAST                                     |
                       LOAD_CONST LOAD_FAST STORE_ATTR                           |
@@ -56,12 +65,12 @@ Variable(Function) -> LOAD_CONST STORE_FAST                                     
                       BUILD_LIST LOAD_CONST LIST_EXTEND STORE_FAST STORE_ATTR   |
                       BUILD_SET LOAD_CONST SET_UPDATE STORE_FAST                |
                       BUILD_SET LOAD_CONST SET_UPDATE STORE_FAST STORE_ATTR     |
-                      CallMethod STORE_FAST                                     | Questa sa da fare
-                      CallMethod STORE_FAST STORE_ATTR                          | Questa sa da fare
-                      CallFunction STORE_FAST                                   | Questa sa da fare
-                      CallFunction STORE_FAST STORE_ATTR                        | Questa sa da fare
-                      Cicle STORE_FAST                                          | Questa sa da vedere e da fare
-                      Cicle STORE_FAST STORE_ATTR                               | Questa sa da vedere e da fare
+                      CallMethod STORE_FAST                                     |
+                      CallMethod STORE_FAST STORE_ATTR                          |
+                      CallFunction STORE_FAST                                   |
+                      CallFunction STORE_FAST STORE_ATTR                        |
+                      Cicle STORE_FAST                                          |
+                      Cicle STORE_FAST STORE_ATTR
 
 Import(Function) -> LOAD_CONST LOAD_CONST IMPORT_NAME STORE_FAST             |
                     LOAD_CONST LOAD_CONST IMPORT_NAME IMPORT_FROM STORE_FAST
@@ -72,21 +81,57 @@ InstructionList -> Instruction InstructionList |
 
 Instruction -> CallFunction |
                CallMethod   |
-               Cicle         Questa sa da vedere e da fare
+               Cicle        |
+               Variable     |
+               If           |
+               Exception    |
+               With
 
-CallMethod -> LOAD_NAME LOAD_METHOD CALL_METHOD             |
-              LOAD_NAME LOAD_ATTR LOAD_METHOD CALL_METHOD   |
-              CallMethod.CallMethod                         |
-              CallMethod.CallFunction                       |
-              LOAD_NAME LOAD_ATTR LOAD_METHOD CALL_METHOD   |
-              LOAD_NAME BodyCallFunction LOAD_METHOD CALL_METHOD|
+CallMethod -> LOAD_NAME LOAD_METHOD CALL_METHOD                 |
+              LOAD_NAME LOAD_ATTR LOAD_METHOD CALL_METHOD       |
+              CallMethod.CallMethod                             |
+              CallMethod.CallFunction                           |
+              LOAD_NAME LOAD_ATTR LOAD_METHOD CALL_METHOD       |
+              LOAD_NAME BodyCallFunction LOAD_METHOD CALL_METHOD
 
-CallFunction -> LOAD_NAME BodyCallFunction CALL_FUNCTION    |
-                LOAD_GLOBAL BodyCallFunction CALL_FUNCTION
+CallFunction -> LOAD_NAME BodyCallFunction CALL_FUNCTION        |
+                LOAD_GLOBAL BodyCallFunction CALL_FUNCTION      |
+                LOAD_NAME BodyCallFunction CALL_FUNCTION_KW     |
+                LOAD_GLOBAL BodyCallFunction CALL_FUNCTION_KW
 
-BodyCallFunction -> LOAD_CONST |
-                    LOAD_NAME  |
-                    LOAD_FAST  |
-                    CallMethod
+BodyCallFunction -> LOAD_CONST          |
+                    LOAD_NAME           |
+                    LOAD_FAST           |
+                    BINARY_SUBSCR       |
+                    BINARY_ADD          |
+                    BUILD_LIST          |
+                    LOAD_ATTR LOAD_NAME |
+                    CallMethod          |
+                    CallFunction        |
+                    Cicle
 
-Cicle -> bho
+Cicle -> Condition GET_ITER <Label1> FOR_ITER <Label2> STORE_NAME CicleBody JUMP_ABSOLUTE <Label1> <Label2>
+
+Condition -> LOAD_CONST                         |
+             LOAD_FAST LOAD_FAST BINARY_SUBSCR  |
+             CallFunction
+
+CicleBody -> InstructionList
+
+If -> Operation POP_JUMP_IF_FALSE InstructionList POP_TOP InstructionList LOAD_CONST RETURN_VALUE <Label> If    |
+      Operation POP_JUMP_IF_TRUE InstructionList POP_TOP InstructionList LOAD_CONST RETURN_VALUE <Label> Else   |
+      Operation POP_JUMP_IF_TRUE InstructionList POP_TOP InstructionList LOAD_CONST RETURN_VALUE <Label> Else   |
+      /* empty */
+
+Else -> InstructionList POP_TOP InstructionList LOAD_CONST RETURN_VALUE
+
+Operation -> Operand Operand COMPARE_OP
+             Operand Operand CONTAINS_OP
+
+Operand -> LOAD_CONST           |
+           LOAD_FAST LOAD_ATTR  |
+           LOAD_FAST
+
+Exception -> SETUP_FINALLY<Label> InstructionList POP_BLOCK InstructionList <Label> POP_TOP POP_TOP POP_TOP InstructionList POP_EXCEPT InstructionList
+
+With -> Condition SETUP_WITH<Label> InstructionList POP_BLOCK

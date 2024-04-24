@@ -1,3 +1,4 @@
-from Oracle.Adapter.AdapterPattern import Adapter, Adaptee
+from Core import Adaptee
+from Core import Adapter
 
 client = Adapter(Adaptee())

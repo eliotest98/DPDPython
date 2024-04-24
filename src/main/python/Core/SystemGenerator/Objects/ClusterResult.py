@@ -111,7 +111,7 @@ class ClusterResult:
                                                 piEntry(RoleType.FIELD, second_role_name, field.get_signature(), -1))
                                         else:
                                             instance.add_entry(
-                                                piEntry(RoleType.FIELD, first_role_name, field.get_signature(), -1))
+                                                piEntry(RoleType.FIELD, first_role_name, field, -1))
                                     else:
                                         instance.add_entry(piEntry(RoleType.FIELD,
                                                                    self.pattern_descriptor.get_field_role_name(),
@@ -162,8 +162,18 @@ class ClusterResult:
     # TODO da aggiungere tutte le matrici
     def relationship_score(self, e1, e2):
         score = 0
-        if self.pattern_descriptor.get_association_matrix() is not None:
+        if not isinstance(self.pattern_descriptor.get_association_matrix(), str):
             matrix = self.system_container.get_association_matrix()
+            if matrix.iloc[e1.get_position(), e2.get_position()] == 1.0 or matrix.iloc[
+                e2.get_position(), e1.get_position()] == 1.0:
+                score += 1
+        if not isinstance(self.pattern_descriptor.get_generalization_matrix(), str):
+            matrix = self.system_container.get_generalization_matrix()
+            if matrix.iloc[e1.get_position(), e2.get_position()] == 1.0 or matrix.iloc[
+                e2.get_position(), e1.get_position()] == 1.0:
+                score += 1
+        if not isinstance(self.pattern_descriptor.get_invoked_method_in_inherited_method_matrix(), str):
+            matrix = self.system_container.get_invoked_method_in_inherited_method_matrix()
             if matrix.iloc[e1.get_position(), e2.get_position()] == 1.0 or matrix.iloc[
                 e2.get_position(), e1.get_position()] == 1.0:
                 score += 1
@@ -177,6 +187,10 @@ class ClusterResult:
         #    iterative_similar_abstract_method_invocation_behavioral_data = self.system_container.get_iterative_similar_abstract_method_invocation_behavioral_data()
         #    self.process_behavioral_data(iterative_similar_abstract_method_invocation_behavioral_data, e1, e2, fields,
         #                                 methods)
+
+        if not isinstance(self.pattern_descriptor.get_invoked_method_in_inherited_method_matrix(), str):
+            invoked_method_in_inherited_method_behavioral_data = self.system_container.get_invoked_method_in_inherited_method_behavioral_data()
+            self.process_behavioral_data(invoked_method_in_inherited_method_behavioral_data, e1, e2, fields, methods)
         return fields, methods
 
     def process_behavioral_data(self, behavioral_data, e1, e2, fields, methods):
@@ -197,6 +211,12 @@ class ClusterResult:
 
 
 class Entry:
+    score = ""
+    role = ""
+    class_name = ""
+    position = ""
+    hash = ""
+
     def __init__(self, score, role, class_name, position):
         self.score = score
         self.role = role
@@ -241,9 +261,13 @@ class Entry:
 
 
 class EntryTuple:
+    relationship_score = 0
+    role_entries = list()
+    hash_code = 0
+
     def __init__(self):
         self.relationship_score = 0
-        self.role_entries = []
+        self.role_entries = list()
         self.hash_code = 0
 
     def get_relationship_score(self):

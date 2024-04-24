@@ -1,13 +1,10 @@
 from Objects.CallFunctionObject import CallFunctionObject
-
+from Objects.VariableObject import VariableObject
 
 # This class represent a return of a function
 # A return is formed from:
 # - type
 # - argument
-from Objects.VariableObject import VariableObject
-
-
 class ReturnObject:
     argument = ""
     type = ""
@@ -24,6 +21,12 @@ class ReturnObject:
 
     def set_type(self, type):
         self.type = type
+
+    def is_empty(self):
+        if self.type == "" and self.argument == "":
+            return True
+        else:
+            return False
 
     def abstract_syntax_tree(self, number_of_tabs):
         string_tabs = (number_of_tabs + 1) * "\t"
@@ -46,3 +49,6 @@ class ReturnObject:
                     self.argument) + "</ARGUMENT>\n"
         return_string = return_string + string_tabs + "</RETURN>"
         return return_string
+
+    def __str__(self):
+        return str(self.argument) + ":" + self.type

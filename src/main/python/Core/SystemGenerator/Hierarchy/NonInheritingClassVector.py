@@ -3,7 +3,7 @@ class NonInheritingClassVector:
     non_inheriting_classes = list()
 
     def __init__(self):
-        self.non_inheriting_classes = []
+        self.non_inheriting_classes = list()
 
     def get_node(self, node_name):
         for node in self.non_inheriting_classes:

@@ -4,7 +4,7 @@ class Entry:
     number_of_method_invocations = 0
 
     def __init__(self):
-        self.hierarchy_list = []
+        self.hierarchy_list = list()
         self.number_of_method_invocations = 0
 
     def add_hierarchy(self, ih):
@@ -32,6 +32,9 @@ class Entry:
 
 
 class ClusterSet:
+
+    entry_set = set()
+
     def __init__(self):
         self.entry_set = set()
 

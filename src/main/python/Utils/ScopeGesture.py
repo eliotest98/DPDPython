@@ -21,8 +21,8 @@ class Scope:
     def __contains__(self, item):
         for variable in self.variable_list:
             variable_name = item.get_variable_name()
-            if variable_name.__contains__("."):
-                variable_name = variable_name.removeprefix("self.")
+            if str(variable_name).__contains__("."):
+                variable_name = str(variable_name).removeprefix("self.")
             if variable.get_variable_name() == variable_name:
                 return True
         return False

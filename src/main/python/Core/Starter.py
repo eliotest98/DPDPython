@@ -1,84 +1,283 @@
+import enum
 import os
+import tkinter as tk
+from tkinter import ttk
 
 import pandas as pd
 
-from Compiler import Compiler
-from Core.ReadBytecode import ReadBytecode
-from Core.SystemGenerator.Objects.PatternResult import PatternResult
-from Core.SystemGenerator.SystemGenerator import SystemGenerator
-from Detector.DesignPatternDetector import DesignPatternDetection
-from Detector.MethodOriginDetector import MethodOriginDetector
-from Detector.SuperclassDetector import SuperclassDetector
-from Detector.TypeDetector import TypeDetector
-from Detector.VariableDetector import VariableDetector
-from Downloader.GithubRepository import GithubRepository
+from Core.Executor import execute_test, execute, single_execution
 from Utils.DesignPattern import DesignPattern
 
-current_directory = os.getcwd().replace("\\Core", "")
-# Get the resource directory
-resource_directory = current_directory.replace("\\python", "") + "\\resources"
-# Get the selected directory
-selected_directory = os.getcwd().replace("\\Core", "")
 
-# Compile Oracle Files because there isn't invoked from any class
-Compiler.compile_file(current_directory + "\\Oracle\\Adapter\\AdapterPattern.py")
-Compiler.compile_repository_files(current_directory + "\\Oracle\\AdapterExtended")
-Compiler.compile_file(current_directory + "\\Oracle\\Classes\\Classes.py")
+class Interface:
+    current_interface = "GithubDetector"
+    current_directory = os.getcwd().replace("\\Core", "")
+    resource_directory = current_directory.replace("\\python", "") + "\\resources"
 
-bytecode = ReadBytecode(debug_active=0)
-# Generate the Oracles Files
-bytecode.select_file(current_directory + "\\Oracle\\AdapterExtended", resource_directory + "\\Oracles\\AdapterExtended")
-# SuperclassDetector for Oracles Files
-SuperclassDetector(bytecode.get_system_object())
-# VariableDetector for Oracles Files
-VariableDetector(bytecode.get_system_object())
-# TypeDetector for Oracles Files
-TypeDetector(bytecode.get_system_object())
-# Method Origin Detector for Oracles Files
-MethodOriginDetector(bytecode.get_system_object())
-# Write on a file the Abstract Syntax Tree (TypeChecked)
-with open(resource_directory + "\\Oracles\\SystemObject.xml", "w") as f:
-    f.write(bytecode.get_system_object().abstract_syntax_tree())
+    def __init__(self, master, current_interface):
+        self.master = master
+        self.current_interface = current_interface
 
-detection = DesignPatternDetection()
-# System Generator for Oracles Files
-system_generator = SystemGenerator(bytecode.get_system_object())
-hierarchy_list = system_generator.get_hierarchy_list()
-pattern_results = list()
-pattern_list = list(DesignPattern)
-for pattern in pattern_list:
-    pattern_name = pattern.name
-    pattern_result = PatternResult(pattern_name)
-    # Now there is only one descriptor
-    pattern_descriptor = detection.set_design_pattern(pattern_name)
-    # TODO da vedere in quanto dipende dalle gerarchie che in python sono multi
-    if pattern_descriptor.get_number_of_hierarchies() == 2:
-        cluster_set = sorted(system_generator.generate_cluster_set(pattern_descriptor).get_cluster_set())
-        for entry in cluster_set:
-            hierarchies_matrix_container = system_generator.get_hierarchies_matrix_container(entry.get_hierarchy_list())
-            pattern_descriptor.set_association_matrix(
-                pd.DataFrame(pattern_descriptor.get_association_matrix().values,
-                             index=hierarchies_matrix_container.get_association_matrix().index,
-                             columns=hierarchies_matrix_container.get_association_matrix().columns))
-            detection.generate_results(hierarchies_matrix_container, pattern_descriptor, pattern_result)
-    pattern_results.append(pattern_result)
+        self.detector_frame = tk.Frame(self.master)
+        self.detector_frame.pack(side="left")
+
+        self.master.title("Design Pattern Detector")
+        self.interface_menu()
+
+        if current_interface == "GithubDetector":
+            self.create_listbox(list(DesignPattern))
+            self.create_text_box()
+        elif current_interface == "OracleTest":
+            self.create_listbox(["Adapter", "AdapterExtended", "Classes", "Test"])
+        elif current_interface == "Niche":
+            niche_df = pd.read_excel(self.resource_directory + "/NICHE.xlsx")
+            self.create_listbox(list(DesignPattern))
+            self.create_listbox_niche(niche_df["GitHub Repo"])
+
+        self.debug_mode = tk.BooleanVar()
+        debug_mode_checkbox = tk.Checkbutton(self.detector_frame, text="Debug Mode", font=("Helvetica", 15),
+                                             variable=self.debug_mode)
+        debug_mode_checkbox.pack()
+
+        self.delete_repository = tk.BooleanVar()
+        self.delete_repository.set(True)
+        delete_repository_checkbox = tk.Checkbutton(self.detector_frame, text="Delete Repository",
+                                                    font=("Helvetica", 15), variable=self.delete_repository)
+        delete_repository_checkbox.pack()
+
+        self.button = tk.Button(self.detector_frame, text="Detect", command=self.my_function, font=("Helvetica", 15))
+        self.button.pack(pady=5)
+
+        self.create_terminal()
+        self.ast_view()
+
+    def interface_menu(self):
+        self.menu = tk.Menu(self.master)
+
+        self.menu.add_command(label="Github Detector", command=lambda: self.open_interface("GithubDetector"))
+        self.menu.add_command(label="Oracles Test", command=lambda: self.open_interface("OracleTest"))
+        self.menu.add_command(label="Niche", command=lambda: self.open_interface("Niche"))
+
+        self.master.config(menu=self.menu)
+
+    def open_interface(self, new_interface):
+        if self.current_interface != new_interface:
+            self.master.destroy()
+            root = tk.Tk()
+            Interface(root, new_interface)
+            root.mainloop()
+
+    def create_listbox(self, list_content):
+        self.label_list = tk.Label(self.detector_frame, text="Select the Design Pattern you want detect:",
+                                   font=("Helvetica", 15))
+        self.label_list.pack()
+
+        # This is the frame of listbox
+        self.listbox_frame = tk.Frame(self.detector_frame)
+        self.listbox_frame.pack(pady=5)
+
+        self.listbox = tk.Listbox(self.listbox_frame, selectmode=tk.MULTIPLE,
+                                  selectborderwidth=2, border=5, font=("Helvetica", 15), exportselection=False)
+
+        if len(list_content) > 5:
+            self.listbox.config(height=5)
+        else:
+            self.listbox.config(height=len(list_content))
+        counter = 0
+        raw_width = 3
+        for pattern in list_content:
+            if isinstance(pattern, enum.Enum):
+                if len(pattern.name) > raw_width:
+                    raw_width = len(pattern.name)
+                self.listbox.insert(counter, pattern.name)
+                counter = counter + 1
+            else:
+                if len(pattern) > raw_width:
+                    raw_width = len(pattern)
+                self.listbox.insert(counter, pattern)
+                counter = counter + 1
+
+        self.listbox.config(width=raw_width)
+        self.listbox.pack(side="left")
+
+        # This is the frame of buttons
+        self.button_frame = tk.Frame(self.listbox_frame)
+        self.button_frame.pack(side="left", padx=20)
+        self.select_button = tk.Button(self.button_frame, text="Select All", command=self.select_all,
+                                       font=("Helvetica", 10))
+        self.select_button.pack(side="top", pady=10)
+        self.select_button = tk.Button(self.button_frame, text="Deselect All", command=self.deselect_all,
+                                       font=("Helvetica", 10))
+        self.select_button.pack(side="bottom")
+
+    def create_listbox_niche(self, list_content):
+        self.label_list_niche = tk.Label(self.detector_frame, text="Select the Github you want analyze:",
+                                         font=("Helvetica", 15))
+        self.label_list_niche.pack()
+
+        # This is the frame of listbox
+        self.listbox_frame_niche = tk.Frame(self.detector_frame)
+        self.listbox_frame_niche.pack(pady=5)
+
+        self.listbox_niche = tk.Listbox(self.listbox_frame_niche, selectmode=tk.MULTIPLE,
+                                        selectborderwidth=2, border=5, font=("Helvetica", 15), exportselection=False)
+
+        if len(list_content) > 5:
+            self.listbox_niche.config(height=5)
+        else:
+            self.listbox_niche.config(height=len(list_content))
+        counter = 0
+        raw_width = 3
+        for pattern in list_content:
+            if isinstance(pattern, enum.Enum):
+                if len(pattern.name) > raw_width:
+                    raw_width = len(pattern.name)
+                self.listbox_niche.insert(counter, pattern.name)
+                counter = counter + 1
+            else:
+                if len(pattern) > raw_width:
+                    raw_width = len(pattern)
+                self.listbox_niche.insert(counter, pattern)
+                counter = counter + 1
+
+        self.listbox_niche.config(width=raw_width)
+        self.listbox_niche.pack(side="left")
+
+        # This is the frame of buttons
+        self.button_frame = tk.Frame(self.listbox_frame_niche)
+        self.button_frame.pack(side="left", padx=20)
+        self.select_button = tk.Button(self.button_frame, text="Select All", command=self.select_all_niche,
+                                       font=("Helvetica", 10))
+        self.select_button.pack(side="top", pady=10)
+        self.select_button = tk.Button(self.button_frame, text="Deselect All", command=self.deselect_all_niche,
+                                       font=("Helvetica", 10))
+        self.select_button.pack(side="bottom")
+
+    def create_text_box(self):
+        # This is the frame of listbox
+        self.github_frame = tk.Frame(self.detector_frame)
+        self.github_frame.pack(pady=5)
+
+        self.label_github = tk.Label(self.github_frame, text="Insert a Github Repository:",
+                                     font=("Helvetica", 15))
+        self.label_github.pack()
+
+        self.label_repository_name = tk.Label(self.github_frame, text="Owner:", font=("Helvetica", 15))
+        self.label_repository_name.pack(side="left")
+        self.entry_owner = tk.Entry(self.github_frame, font=("Helvetica", 10))
+        self.entry_owner.pack(side="left")
+        self.label_repository_name = tk.Label(self.github_frame, text="Repository:", font=("Helvetica", 15))
+        self.label_repository_name.pack(side="left")
+        self.entry_repository = tk.Entry(self.github_frame, font=("Helvetica", 10))
+        self.entry_repository.pack(side="left")
+
+    def create_terminal(self):
+        self.terminal_frame = tk.Frame(self.detector_frame)
+        self.terminal_frame.pack()
+
+        scrollbar = tk.Scrollbar(self.terminal_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.terminal = tk.Text(self.terminal_frame, wrap=tk.WORD, yscrollcommand=scrollbar.set, state="disabled")
+        self.terminal.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.config(command=self.terminal.yview)
+
+    def select_all(self):
+        self.listbox.select_set(0, tk.END)
+
+    def select_all_niche(self):
+        self.listbox_niche.select_set(0, tk.END)
+
+    def deselect_all(self):
+        self.listbox.select_clear(0, tk.END)
+
+    def deselect_all_niche(self):
+        self.listbox_niche.select_clear(0, tk.END)
+
+    def clean_terminal(self):
+        self.terminal.config(state="normal")
+        self.terminal.delete("1.0", tk.END)
+        self.terminal.config(state="disabled")
+
+    def clean_ast(self):
+        self.ast.destroy()
+        self.ast_view()
+
+    def ast_view(self):
+        self.ast = ttk.Treeview(self.master)
+
+        self.ast['columns'] = ('#0')
+        # Formatta le colonne
+        self.ast.column("#0", width=200, minwidth=50, stretch=tk.NO)
+        self.ast.column("#1", width=200, minwidth=50, stretch=tk.NO)
+
+        # Crea gli header delle colonne
+        self.ast.heading("#0", text="Controlled Classes", anchor=tk.W)
+        self.ast.heading("#1", text="Duplicated Classes", anchor=tk.W)
+        self.ast.pack(side='left', fill='both', expand=True)
+
+    def my_function(self):
+        self.clean_terminal()
+        self.clean_ast()
+        selected_values = [self.listbox.get(i) for i in self.listbox.curselection()]
+        debug_mode = self.debug_mode.get()
+        delete_repository = self.delete_repository.get()
+        if self.current_interface == "GithubDetector":
+            entered_text_owner = self.entry_owner.get()
+            entered_text_repository = self.entry_repository.get()
+            if len(selected_values) == 0:
+                self.terminal.config(state="normal")
+                self.terminal.insert(tk.END, "Please select a Design Pattern")
+                self.terminal.config(state="disabled")
+            elif entered_text_owner == "" or entered_text_repository == "":
+                self.terminal.config(state="normal")
+                self.terminal.insert(tk.END, "Please insert a Github Repository for example: eliotest98\\DPDPython")
+                self.terminal.config(state="disabled")
+            else:
+                with open(self.resource_directory + "\\GeneratedFiles\\Oracles\\" + "log.txt", "a",
+                          encoding='utf-8') as f:
+                    string_to_add = execute(entered_text_owner, entered_text_repository, "", debug_mode, self.terminal,
+                                            selected_values, self.ast, delete_repository)
+                    f.writelines("[1] " + entered_text_owner + "\\" + entered_text_repository + "\n" + string_to_add)
+        elif self.current_interface == "OracleTest":
+            if len(selected_values) == 0:
+                self.terminal.config(state="normal")
+                self.terminal.insert(tk.END, "Please select a Design Pattern")
+                self.terminal.config(state="disabled")
+            else:
+                for value in selected_values:
+                    execute_test(value, debug_mode, self.terminal, self.ast)
+        elif self.current_interface == "Niche":
+            selected_values_niche = [self.listbox_niche.get(i) for i in self.listbox_niche.curselection()]
+            if len(selected_values) == 0:
+                self.terminal.config(state="normal")
+                self.terminal.insert(tk.END, "Please select a Design Pattern")
+                self.terminal.config(state="disabled")
+                return
+            if len(selected_values_niche) == 0:
+                self.terminal.config(state="normal")
+                self.terminal.insert(tk.END, "Please select a Repository")
+                self.terminal.config(state="disabled")
+                return
+
+            os.remove(self.resource_directory + "\\GeneratedFiles\\Oracles\\log.txt")
+            counter = 1
+            for niche_github in selected_values_niche:
+                with open(self.resource_directory + "\\GeneratedFiles\\Oracles\\" + "log.txt", "a",
+                          encoding='utf-8') as f:
+                    string_to_add = single_execution(niche_github, debug_mode, self.terminal, selected_values, self.ast,
+                                                     delete_repository)
+                    f.writelines("[" + str(counter) + "] " + niche_github + "\n" + string_to_add)
+                counter = counter + 1
+
+        self.expand_all(self.ast)
+
+    def expand_all(self, treeview, node=''):
+        for child in treeview.get_children(node):
+            treeview.item(child, open=True)
+            self.expand_all(treeview, child)
 
 
-for pattern_individuated in pattern_results:
-    for pattern_instance in pattern_individuated.get_pattern_instances():
-        print("Instance of: " + pattern_individuated.get_pattern_name())
-        print("Number of instances: ", pattern_instance.get_instance_counter())
-        print(pattern_instance)
-
-# Download the file from a repository
-repository = GithubRepository("AaronWard/covidify", resource_directory + "\\GeneratedFiles\\DirectorySelected")
-# repository.download_repository()
-# repository.change_permissions()
-# repository.delete_files_unused()
-# repository.compile_repository_files()
-'''bytecode.select_file(resource_directory + "\\GeneratedFiles\\DirectorySelected\\" + "AaronWard\\covidify"
-                     + "\\Source"
-                     ,
-                     resource_directory + "\\GeneratedFiles\\Oracles\\" + "AaronWard\\covidify" + "\\AbstractSyntaxTree",
-                     1)'''
-# repository.delete_reporitory()
+if __name__ == '__main__':
+    root = tk.Tk()
+    my_interface = Interface(root, "GithubDetector")
+    root.mainloop()

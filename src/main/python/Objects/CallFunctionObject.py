@@ -4,6 +4,9 @@
 # - a name method
 # - a list of parameters
 # - the origin class name who implement the function called
+from bytecode import CellVar, FreeVar
+
+
 class CallFunctionObject:
     path = ""
     method_name = ""
@@ -48,6 +51,13 @@ class CallFunctionObject:
     def get_original_class_name(self):
         return self.origin_class_name
 
+    def __str__(self):
+        params = "("
+        for parameter in self.parameters_list:
+            params = params + str(parameter) + " , "
+        params = params.removesuffix(" , ") + ")"
+        return str(self.path) + str(self.method_name) + str(params)
+
     def abstract_syntax_tree(self, number_of_tabs):
         string_tabs = (number_of_tabs + 2) * "\t"
         internal_string_tabs = string_tabs + "\t"
@@ -55,7 +65,10 @@ class CallFunctionObject:
         if len(self.concatenation_calls) != 0:
             string_to_return = string_tabs + "<CONCATENATE_FUNCTION>"
             for call in self.concatenation_calls:
-                string_to_return = string_to_return + "\n" + call.abstract_syntax_tree(number_of_tabs + 1)
+                if isinstance(call, str):
+                    string_to_return = string_to_return + "\n" + internal_string_tabs + call
+                else:
+                    string_to_return = string_to_return + "\n" + call.abstract_syntax_tree(number_of_tabs + 1)
             string_to_return = string_to_return + internal_string_tabs + "\n" + internal_string_tabs + "<CALL_FUNCTION> (id,\n"
             if self.path != "":
                 string_to_return = string_to_return + self.path + str(self.method_name) + "("
@@ -81,11 +94,14 @@ class CallFunctionObject:
         if len(self.parameters_list) != 0:
             self.parameters_list.reverse()
             for param in self.parameters_list:
-                if isinstance(param, (str, int, tuple)):
-                    string_to_return = string_to_return + str(param) + ","
-                else:
+                if isinstance(param, (str, int, tuple, float, CellVar, FreeVar, bytes, frozenset, complex, list)):
+                    string_to_return = string_to_return + str(param) + "\n\t" + internal_string_tabs + ","
+                elif isinstance(param, CallFunctionObject):
                     string_to_return = string_to_return + "\n" + param.abstract_syntax_tree(
-                        number_of_tabs + 1) + ","
+                        number_of_tabs + 2) + "\n\t" + internal_string_tabs + ","
+                else:
+                    string_to_return = string_to_return + "\n" + internal_string_tabs + param.abstract_syntax_tree(
+                        number_of_tabs + 2) + internal_string_tabs + ","
             string_to_return = string_to_return.removesuffix(",")
         string_to_return = string_to_return + "))"
         if self.origin_class_name != "":

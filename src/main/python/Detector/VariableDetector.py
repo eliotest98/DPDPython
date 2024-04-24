@@ -1,18 +1,23 @@
 from Detector.ScopeDetector import ScopeDetector
+from Downloader.ProgressionCheck import ProgressDetection
 from Objects.ClassObject import ClassObject
 from Objects.VariableObject import VariableObject
 
 
 class VariableDetector:
+    progressor = ProgressDetection()
 
-    def __init__(self, system_object):
-        scope_detector = ScopeDetector(system_object)
+    def __init__(self, system_object, terminal):
+        self.progressor = ProgressDetection()
+        scope_detector = ScopeDetector(system_object, terminal)
         variables = scope_detector.get_variables_scope()
-        self.detect_self_variables(system_object, variables)
-        self.detect_same_variable_in_variables_list(system_object)
+        self.detect_self_variables(system_object, variables, terminal)
+        self.detect_same_variable_in_variables_list(system_object, terminal)
 
-    def detect_self_variables(self, system_object, variables_in_scope):
+    def detect_self_variables(self, system_object, variables_in_scope, terminal):
         for i in range(system_object.get_class_number()):
+            self.progressor.update(len(system_object.get_class_names()), i, "VariableDetector detect self variables",
+                                   terminal)
             class_or_file_object = system_object.get_class_object_with_position(i)
             if isinstance(class_or_file_object, ClassObject):
                 for function in class_or_file_object.get_functions_list():
@@ -30,14 +35,16 @@ class VariableDetector:
                         is_breaked = True
                         break
                 if not is_breaked:
-                    if variable.get_variable_name().__contains__("self."):
+                    if str(variable.get_variable_name()).__contains__("self."):
                         new_variable = VariableObject()
                         new_variable.set_variable_name(variable.get_variable_name().removeprefix("self."))
                         new_variable.set_type(variable.get_type())
                         class_or_file_object.add_variable(new_variable)
 
-    def detect_same_variable_in_variables_list(self, system_object):
+    def detect_same_variable_in_variables_list(self, system_object, terminal):
         for i in range(system_object.get_class_number()):
+            self.progressor.update(len(system_object.get_class_names()), i,
+                                   "VariableDetector detect same variable in variable list", terminal)
             class_or_file_object = system_object.get_class_object_with_position(i)
             variables = list()
             for variable in class_or_file_object.get_variables_list():
