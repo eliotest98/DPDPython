@@ -1,5 +1,8 @@
 import os
 import py_compile
+from Downloader.ProgressionCheck import ProgressDetection
+
+progressor = ProgressDetection()
 
 
 # This method compile a file
@@ -11,16 +14,19 @@ def compile_file(path):
 
 
 # This method compile all repository files
-def compile_repository_files(path):
+def compile_repository_files(path, terminal):
     if os.path.isdir(path):
+        counter = 1
         for dir in os.listdir(path):
+            progressor.update(len(os.listdir(path)), counter, "Compiling Repository Files...", terminal)
             if os.path.isfile(path + "\\" + dir):
-                compile_repository_files(path + "\\" + dir)
+                compile_repository_files(path + "\\" + dir, terminal)
             else:
                 if os.listdir(path + "\\" + dir):
-                    compile_repository_files(path + "\\" + dir)
+                    compile_repository_files(path + "\\" + dir, terminal)
                 else:
-                    compile_repository_files(path + "\\" + dir)
+                    compile_repository_files(path + "\\" + dir, terminal)
+            counter = counter + 1
     else:
         if not path.endswith(".pyc"):
             compile_file(path)

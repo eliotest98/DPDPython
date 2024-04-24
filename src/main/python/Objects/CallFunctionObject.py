@@ -94,7 +94,7 @@ class CallFunctionObject:
         if len(self.parameters_list) != 0:
             self.parameters_list.reverse()
             for param in self.parameters_list:
-                if isinstance(param, (str, int, tuple, float, CellVar, FreeVar, bytes)):
+                if isinstance(param, (str, int, tuple, float, CellVar, FreeVar, bytes, frozenset, complex, list)):
                     string_to_return = string_to_return + str(param) + "\n\t" + internal_string_tabs + ","
                 elif isinstance(param, CallFunctionObject):
                     string_to_return = string_to_return + "\n" + param.abstract_syntax_tree(

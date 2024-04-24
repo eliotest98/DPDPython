@@ -1,4 +1,5 @@
 import html
+import types
 
 from bytecode import Label, Instr
 from bytecode import bytecode
@@ -25,6 +26,13 @@ class CallFunctionReader:
             instruction = by[i]
             if debug_active == 1:
                 print(instruction)
+            if isinstance(instruction, Label):
+                i = i + 1
+                continue
+            elif isinstance(instruction, types.CodeType):
+                i = i + 1
+                continue
+
             match instruction.name:
 
                 # CallMethod -> LOAD_NAME LOAD_METHOD CALL_METHOD
@@ -102,23 +110,21 @@ class CallFunctionReader:
                         # BodyFunction -> LOAD_GLOBAL
                         # BodyFunction -> LOAD_ATTR
                         # BodyFunction -> LOAD_FAST
-                        elif by[i].name == "GET_ITER" or by[i].name == "BINARY_ADD" or by[i].name == "BINARY_SUBSCR" \
-                                or by[i].name == "BUILD_LIST" or by[i].name == "LOAD_GLOBAL" \
+                        elif by[i].name == "GET_ITER" or by[i].name == "BUILD_LIST" or by[i].name == "LOAD_GLOBAL" \
                                 or by[i].name == "LOAD_ATTR" or by[i].name == "SET_ADD" or by[i].name == "STORE_FAST" \
-                                or by[i].name == "BINARY_MODULO" or by[i].name == "BINARY_MULTIPLY" \
-                                or by[i].name == "BINARY_TRUE_DIVIDE" or by[i].name == "LIST_EXTEND" \
-                                or by[i].name == "BINARY_POWER" or by[i].name == "MAKE_FUNCTION" \
+                                or by[i].name == "LIST_EXTEND" or by[i].name == "MAKE_FUNCTION" \
                                 or by[i].name == "BUILD_TUPLE" or by[i].name == "LOAD_DEREF" \
                                 or by[i].name == "MAKE_FUNCTION" or by[i].name == "BUILD_SLICE" \
                                 or by[i].name == "LIST_APPEND" or by[i].name == "BUILD_STRING" \
-                                or by[i].name == "BINARY_AND" or by[i].name == "BINARY_OR" \
+                                or by[i].name == "MAP_ADD" or by[i].name == "YIELD_FROM" or by[i].name == "POP_TOP" \
                                 or by[i].name == "UNARY_INVERT" or by[i].name == "BUILD_SET" \
                                 or by[i].name == "UNARY_NEGATIVE" or by[i].name == "SET_UPDATE" \
                                 or by[i].name == "CALL_FUNCTION_EX" or by[i].name == "LOAD_FAST" \
-                                or by[i].name == "LIST_TO_TUPLE" or by[i].name == "BINARY_FLOOR_DIVIDE" \
-                                or by[i].name == "UNARY_NOT" or by[i].name == "BINARY_MATRIX_MULTIPLY" \
+                                or by[i].name == "LIST_TO_TUPLE" or by[i].name == "LOAD_CLOSURE" \
+                                or by[i].name == "UNARY_NOT" or by[i].name == "STORE_NAME" \
                                 or by[i].name == "FORMAT_VALUE" or by[i].name == "DICT_UPDATE" \
-                                or by[i].name == "STORE_ATTR" or by[i].name == "UNARY_POSITIVE":
+                                or by[i].name == "STORE_ATTR" or by[i].name == "UNARY_POSITIVE" \
+                                or by[i].name == "ROT_TWO" or by[i].name.__contains__("BINARY_"):
                             return_values = self.recursive_identification(by[i:])
                             call_function_object.add_parameter(return_values[0])
                             by = return_values[1]
@@ -269,6 +275,9 @@ class CallFunctionReader:
                         return return_values[1]
                     elif by[i].name == "MAKE_FUNCTION":
                         return ""
+                    elif by[i].name == "BUILD_CONST_KEY_MAP":
+                        return_values = self.recursive_identification(by[i:])
+                        return return_values[1]
                     else:
                         print("ERROR CALL_METHOD")
                         print(by[i])
@@ -354,7 +363,12 @@ class CallFunctionReader:
                                 or by[i].name == "UNARY_INVERT" or by[i].name == "LIST_TO_TUPLE" \
                                 or by[i].name == "BUILD_SLICE" or by[i].name.__contains__("_OP") \
                                 or by[i].name.__contains__("BINARY_") or by[i].name == "UNARY_NOT" \
-                                or by[i].name == "FORMAT_VALUE" or by[i].name == "STORE_FAST":
+                                or by[i].name == "FORMAT_VALUE" or by[i].name == "STORE_FAST" \
+                                or by[i].name == "SET_UPDATE" or by[i].name == "STORE_NAME" or by[i].name == "POP_TOP" \
+                                or by[i].name == "LIST_APPEND" or by[i].name == "ROT_TWO" or by[i].name == "MAP_ADD" \
+                                or by[i].name == "JUMP_IF_TRUE_OR_POP" or by[i].name == "DUP_TOP" \
+                                or by[i].name == "INPLACE_TRUE_DIVIDE" or by[i].name == "LOAD_CLOSURE" \
+                                or by[i].name == "UNARY_POSITIVE" or by[i].name == "SET_ADD":
                             return_values = self.recursive_identification(by[i:])
                             call_function_object.add_parameter(return_values[0])
                             by = return_values[1]
@@ -429,6 +443,9 @@ class CallFunctionReader:
                             # Skipping...
                             return call_function_object
                         elif by[i].name == "MAKE_FUNCTION":
+                            # Skipping...
+                            return call_function_object
+                        elif by[i].name == "BUILD_SET":
                             # Skipping...
                             return call_function_object
                         else:
@@ -529,10 +546,14 @@ class CallFunctionReader:
                                 or by[i].name == "CALL_FUNCTION_KW" or by[i].name == "MAKE_FUNCTION" \
                                 or by[i].name == "CALL_FUNCTION_EX" or by[i].name == "DICT_UPDATE" \
                                 or by[i].name == "BUILD_STRING" or by[i].name == "SET_UPDATE" \
-                                or by[i].name == "BUILD_SET" or by[i].name == "MAP_ADD" \
+                                or by[i].name == "BUILD_SET" or by[i].name == "MAP_ADD" or by[i].name == "STORE_NAME" \
                                 or by[i].name == "UNARY_NEGATIVE" or by[i].name == "STORE_FAST" \
                                 or by[i].name == "LIST_TO_TUPLE" or by[i].name == "BUILD_SLICE" \
-                                or by[i].name == "UNARY_NOT" or by[i].name.__contains__("BINARY_"):
+                                or by[i].name == "UNARY_NOT" or by[i].name.__contains__("BINARY_") \
+                                or by[i].name == "UNARY_INVERT" or by[i].name == "UNARY_POSITIVE" \
+                                or by[i].name == "STORE_SUBSCR" or by[i].name == "LOAD_BUILD_CLASS" \
+                                or by[i].name == "UNPACK_SEQUENCE" or by[i].name == "STORE_ATTR" \
+                                or by[i].name == "POP_TOP":
                             return_values = self.recursive_identification(by[i:])
                             call_function_object.add_parameter(return_values[0])
                             by = return_values[1]
@@ -568,6 +589,8 @@ class CallFunctionReader:
                         elif by[i].name == "LOAD_ATTR":
                             call_function_object.set_method_name(by[i].arg)
                             i = i + 1
+                            if len(by[i:]) == 0:
+                                return ""
                             return_values = self.recursive_identification(by[i:])
                             value = return_values[0]
                             call_function_object.set_path(str(value) + ".")
@@ -583,6 +606,12 @@ class CallFunctionReader:
                             call_function_object.add_concat(return_values[0])
                             return call_function_object
                         elif by[i].name == "MAKE_FUNCTION":
+                            i = i + 1
+                            return ""
+                        elif by[i].name == "LOAD_METHOD":
+                            i = i + 1
+                            return ""
+                        elif by[i].name == "LOAD_BUILD_CLASS":
                             i = i + 1
                             return ""
                         else:
@@ -604,7 +633,7 @@ class CallFunctionReader:
             while not isinstance(by[counter], Label):
                 next_instructions.append(by[counter])
                 counter = counter + 1
-                if len(by) == counter + 1:
+                if counter >= len(by):
                     break
                 if isinstance(by[counter], Label):
                     internal_raw_label = str(by[counter]).removeprefix(
@@ -628,6 +657,9 @@ class CallFunctionReader:
             return_values = self.recursive_identification(next_instructions)
             right_value = return_values[0]
 
+            if counter >= len(by):
+                return "Skip", []
+
             if by[counter].name == "JUMP_IF_TRUE_OR_POP":
                 operation_object = OperationObject()
                 operation_object.set_operation_type("OR")
@@ -645,6 +677,8 @@ class CallFunctionReader:
             return html.escape(str(value)), by[counter:]
         elif by[counter].name == "JUMP_IF_TRUE_OR_POP":
             counter = counter + 1
+            if len(by[counter:]) == 0:
+                return "Skip", []
             return_values = self.recursive_identification(by[counter:])
             value = return_values[0]
             by = return_values[1]
@@ -659,6 +693,10 @@ class CallFunctionReader:
             counter = counter + 1
             return value, by[counter:]
         elif by[counter].name == "STORE_NAME":
+            value = by[counter].arg
+            counter = counter + 1
+            return value, by[counter:]
+        elif by[counter].name == "STORE_GLOBAL":
             value = by[counter].arg
             counter = counter + 1
             return value, by[counter:]
@@ -726,11 +764,16 @@ class CallFunctionReader:
             arguments_counter = 0
             list_values = "{"
             while arguments_counter < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # Value
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
                 counter = 0
                 value = return_values[0]
+
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # Key
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
@@ -747,6 +790,8 @@ class CallFunctionReader:
             arguments_counter = 0
             list_values = "("
             while arguments_counter < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
                 counter = 0
@@ -827,11 +872,19 @@ class CallFunctionReader:
 
             # Parameters
             while counter_arguments < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return call_function, []
                 return_values = self.recursive_identification(by[counter:])
                 call_function.add_parameter(return_values[0])
                 by = return_values[1]
                 counter = 0
                 counter_arguments = counter_arguments + 1
+
+            if counter >= len(by):
+                return call_function, []
+
+            if isinstance(by[counter], Label):
+                return call_function, []
 
             # Name of method
             if by[counter].name == "LOAD_METHOD":
@@ -910,6 +963,9 @@ class CallFunctionReader:
                 counter = 0
                 counter_arguments = counter_arguments + 1
 
+            if len(by[counter:]) == 0:
+                return call_function, []
+
             return_values = self.recursive_identification(by[counter:])
             call_function.set_method_name(return_values[0])
             by = return_values[1]
@@ -937,10 +993,17 @@ class CallFunctionReader:
             return add, by[counter:]
         elif by[counter].name == "BINARY_SUBSCR":
             counter = counter + 1
+
+            if len(by[counter:]) == 0:
+                return "Skip", []
             return_values = self.recursive_identification(by[counter:])
             value_internal = return_values[0]
             by = return_values[1]
             counter = 0
+
+            if len(by[counter:]) == 0:
+                return "Skip", []
+
             return_values = self.recursive_identification(by[counter:])
             path = return_values[0]
             by = return_values[1]
@@ -948,12 +1011,18 @@ class CallFunctionReader:
             return str(path) + "[" + str(value_internal) + "]", by[counter:]
         elif by[counter].name == "BINARY_MODULO":
             counter = counter + 1
+
+            if len(by[counter:]) == 0:
+                return "Skip", []
             # First Part
             return_values = self.recursive_identification(by[counter:])
             module = return_values[0]
             by = return_values[1]
             counter = 0
             module = " % " + str(module)
+
+            if len(by[counter:]) == 0:
+                return "Skip", []
             # Second Part
             return_values = self.recursive_identification(by[counter:])
             module = str(return_values[0]) + module
@@ -963,12 +1032,16 @@ class CallFunctionReader:
         elif by[counter].name == "BINARY_SUBTRACT":
             counter = counter + 1
 
+            if len(by[counter:]) == 0:
+                return "Skip", []
             # First Operand
             return_values = self.recursive_identification(by[counter:])
             by = return_values[1]
             counter = 0
             subtract = " - " + str(return_values[0])
 
+            if len(by[counter:]) == 0:
+                return "Skip", []
             # Second Operand
             return_values = self.recursive_identification(by[counter:])
             by = return_values[1]
@@ -1041,6 +1114,27 @@ class CallFunctionReader:
             counter = counter + 1
             operation_object = OperationObject()
             operation_object.set_operation_type("OR")
+
+            if len(by[counter:]) == 0:
+                return "Skip", []
+            # Left Operand
+            return_values = self.recursive_identification(by[counter:])
+            operation_object.set_first_operand(return_values[0])
+            by = return_values[1]
+            counter = 0
+
+            if len(by[counter:]) == 0:
+                return "Skip", []
+            # Right Operand
+            return_values = self.recursive_identification(by[counter:])
+            operation_object.set_second_operand(return_values[0])
+            by = return_values[1]
+            counter = 0
+            return operation_object, by[counter:]
+        elif by[counter].name == "BINARY_XOR":
+            counter = counter + 1
+            operation_object = OperationObject()
+            operation_object.set_operation_type("XOR")
 
             if len(by[counter:]) == 0:
                 return "Skip", []
@@ -1310,6 +1404,8 @@ class CallFunctionReader:
             operation_object = OperationObject()
             operation_object.set_operation_type(operation_name)
             counter = counter + 1
+            if len(by[counter:]) == 0:
+                return operation_object, []
             # Operand
             return_values = self.recursive_identification(by[counter:])
             operation_object.set_second_operand(return_values[0])
@@ -1337,12 +1433,16 @@ class CallFunctionReader:
 
             # Parameters
             while counter_arguments < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return call_function, []
                 return_values = self.recursive_identification(by[counter:])
                 call_function.add_parameter(return_values[0])
                 by = return_values[1]
                 counter = 0
                 counter_arguments = counter_arguments + 1
 
+            if len(by[counter:]) == 0:
+                return call_function, []
             return_values = self.recursive_identification(by[counter:])
             call_function.set_method_name(return_values[0])
             by = return_values[1]
@@ -1357,6 +1457,8 @@ class CallFunctionReader:
 
             arguments = ""
             while arguments_counter < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return operation_object, []
                 # First Part
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
@@ -1367,6 +1469,8 @@ class CallFunctionReader:
             arguments = arguments.removesuffix(",")
             operation_object.set_second_operand(arguments)
 
+            if len(by[counter:]) == 0:
+                return operation_object, []
             # Second Part
             return_values = self.recursive_identification(by[counter:])
             by = return_values[1]
@@ -1379,6 +1483,8 @@ class CallFunctionReader:
             operation_object = OperationObject()
             operation_object.set_operation_type("UNARY INVERT")
 
+            if len(by[counter:]) == 0:
+                return operation_object, []
             # Operand
             return_values = self.recursive_identification(by[counter:])
             operation_object.set_first_operand(return_values[0])
@@ -1389,6 +1495,9 @@ class CallFunctionReader:
             counter = counter + 1
             operation_object = OperationObject()
             operation_object.set_operation_type("UNARY NOT")
+
+            if len(by[counter:]) == 0:
+                return operation_object, []
 
             # Operand
             return_values = self.recursive_identification(by[counter:])
@@ -1410,6 +1519,8 @@ class CallFunctionReader:
             arguments_counter = 0
             list_values = "("
             while arguments_counter < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
                 counter = 0
@@ -1426,6 +1537,8 @@ class CallFunctionReader:
 
             arguments = ""
             while arguments_counter < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
                 counter = 0
@@ -1438,12 +1551,17 @@ class CallFunctionReader:
             new_tuple = "("
 
             counter = counter + 1
+
+            if len(by[counter:]) == 0:
+                return "Skip", []
             # First Part
             return_values = self.recursive_identification(by[counter:])
             by = return_values[1]
             counter = 0
             new_tuple = new_tuple + return_values[0] + ","
 
+            if len(by[counter:]) == 0:
+                return "Skip", []
             # Second Part
             return_values = self.recursive_identification(by[counter:])
             by = return_values[1]
@@ -1453,6 +1571,8 @@ class CallFunctionReader:
             return new_tuple, by[counter:]
         elif by[counter].name == "INPLACE_TRUE_DIVIDE":
             counter = counter + 1
+            if len(by[counter:]) == 0:
+                return "Skip", []
             return_values = self.recursive_identification(by[counter:])
             value = return_values[0]
             by = return_values[1]
@@ -1464,11 +1584,13 @@ class CallFunctionReader:
             counter = counter + 1
             arguments = "("
             while arguments_counter < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 return_values = self.recursive_identification(by[counter:])
                 value = return_values[0]
                 by = return_values[1]
                 counter = 0
-                arguments = arguments + value + ","
+                arguments = arguments + str(value) + ","
                 arguments_counter = arguments_counter + 1
 
             arguments = arguments.removesuffix(",")
@@ -1482,6 +1604,8 @@ class CallFunctionReader:
             arguments = ""
 
             while arguments_counter < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
                 counter = 0
@@ -1491,6 +1615,15 @@ class CallFunctionReader:
             arguments = arguments.removesuffix(",")
 
             return arguments, by[counter:]
+        elif by[counter].name == "INPLACE_ADD":
+            counter = counter + 1
+            return_values = self.recursive_identification(by[counter:])
+            value = return_values[0]
+            by = return_values[1]
+            counter = 0
+            return value, by[counter:]
+        elif by[counter].name == "STORE_SUBSCR":
+            return "Skip", []
         elif by[counter].name == "LOAD_BUILD_CLASS":
             return "", []
         elif by[counter].name == "RETURN_VALUE":
@@ -1501,6 +1634,20 @@ class CallFunctionReader:
             return "", []
         elif by[counter].name == "POP_TOP":
             return "", []
+        elif by[counter].name == "ROT_TWO":
+            return "", []
+        elif by[counter].name == "UNPACK_SEQUENCE":
+            return "", []
+        elif by[counter].name == "POP_JUMP_IF_FALSE":
+            return "", []
+        elif by[counter].name == "DUP_TOP":
+            return "", []
+        elif by[counter].name == "RERAISE":
+            return "", []
+        elif by[counter].name == "YIELD_FROM":
+            return "", []
+        elif by[counter].name == "IMPORT_STAR":
+            return "*", []
         else:
             print("Recursive identification not registered Call Function Reader")
             print(by[counter])

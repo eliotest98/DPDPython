@@ -1,12 +1,19 @@
+from Downloader.ProgressionCheck import ProgressDetection
+
+
 class ImportsDetector:
     imports_list = {}
+    progressor = ProgressDetection()
 
-    def __init__(self, system_object):
+    def __init__(self, system_object, terminal):
+        self.progressor = ProgressDetection()
         self.imports_list = {}
-        self.detect_all_imports(system_object)
+        self.detect_all_imports(system_object, terminal)
 
-    def detect_all_imports(self, system_object):
+    def detect_all_imports(self, system_object, terminal):
         for i in range(system_object.get_class_number()):
+            self.progressor.update(len(system_object.get_class_names()), i, "ImportsDetector detect all imports",
+                                   terminal)
             class_or_file_object = system_object.get_class_object_with_position(i)
             key = class_or_file_object.get_class_name()
             if class_or_file_object.get_file_name() != "":

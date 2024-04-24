@@ -1,19 +1,23 @@
+from Downloader.ProgressionCheck import ProgressDetection
 from Utils.ScopeGesture import Scope
 
 
 class ScopeDetector:
     variable_scope = {}
+    progressor = ProgressDetection()
 
-    def __init__(self, system_object):
+    def __init__(self, system_object, terminal):
+        self.progressor = ProgressDetection()
         self.variable_scope = {}
-        self.get_all_variables(system_object)
+        self.get_all_variables(system_object, terminal)
         self.detect_scope(system_object)
 
     def get_variables_scope(self):
         return self.variable_scope
 
-    def get_all_variables(self, system_object):
+    def get_all_variables(self, system_object, terminal):
         for i in range(system_object.get_class_number()):
+            self.progressor.update(len(system_object.get_class_names()), i, "ScopeDetector get all variables", terminal)
             class_or_file_object = system_object.get_class_object_with_position(i)
             key = class_or_file_object.get_class_name()
             if class_or_file_object.get_file_name() != "":

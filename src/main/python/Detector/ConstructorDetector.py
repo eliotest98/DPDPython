@@ -1,3 +1,4 @@
+from Downloader.ProgressionCheck import ProgressDetection
 from Objects.FileObject import FileObject
 from Objects.FunctionObject import FunctionObject
 from Objects.ReturnObject import ReturnObject
@@ -5,13 +6,17 @@ from Objects.VariableObject import VariableObject
 
 
 class ConstructorDetector:
+    progressor = ProgressDetection()
 
-    def __init__(self, system_object):
-        self.create_constructors(system_object)
+    def __init__(self, system_object, terminal):
+        self.progressor = ProgressDetection()
+        self.create_constructors(system_object, terminal)
 
     # This method create the constructors if not exist
-    def create_constructors(self, system_object):
+    def create_constructors(self, system_object, terminal):
         for i in range(system_object.get_class_number()):
+            self.progressor.update(len(system_object.get_class_names()), i, "ConstructorDetector create constructors",
+                                   terminal)
             class_object = system_object.get_class_object_with_position(i)
             if not isinstance(class_object, FileObject):
                 if class_object.get_constructor().get_function_name() != "":

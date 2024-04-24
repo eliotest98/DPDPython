@@ -233,20 +233,17 @@ class ClassReader:
                             i = i + 1
                             continue
 
-                    previous_instruction = list()
-                    count = i - 1
-                    previous_instruction.append(instruction)
-                    while by[count].name != "POP_TOP" and by[count].name != "NOP" and by[count].name != "STORE_NAME":
-                        previous_instruction.append(by[count])
-                        count = count - 1
+                    copy = by[:i + 1]
+                    copy.reverse()
+                    return_values = self.arguments_instructions(copy)
 
                     # Create a call function object
                     call_function = CallFunctionObject()
 
                     call_function_reader = CallFunctionReader()
-                    call_function_reader.read_call_function(call_function, previous_instruction, debug_active)
+                    call_function_reader.read_call_function(call_function, return_values[0], debug_active)
 
-                    # Add the call function at instructions of class object
+                    # Add the call function at instructions of file object
                     class_object.add_instruction(call_function)
 
                 # Cicle -> CallFunction GET_ITER <Label1> FOR_ITER <Label2> STORE_NAME CicleBody
@@ -293,9 +290,6 @@ class ClassReader:
                     elif previous_instruction[0].name == "LOAD_CONST":
                         variable_condition.set_argument(previous_instruction[0].arg)
                         variable_condition.set_type(str(type(previous_instruction[0].arg).__name__))
-                    elif previous_instruction[0].name == "BINARY_SUBSCR":
-                        variable_condition.set_argument(by[i - 3].arg + "[" + by[i - 2].arg + "]")
-                        variable_condition.set_type("variable")
                     else:
                         print("Condition not registered Class Reader", previous_instruction[0])
 
@@ -411,49 +405,50 @@ class ClassReader:
                     variable_object.set_variable_name(
                         str(variable_name) + "[" + str(square_parenthesis) + "]")
 
-                    # Variable -> LOAD_CONST LOAD_NAME LOAD_CONST STORE_SUBSCR
-                    if previous_instructions[0].name == "LOAD_CONST":
-                        variable_object.set_argument(previous_instructions[0].arg)
-                        variable_object.set_type(str(type(previous_instructions[0].arg).__name__))
-                    # Variable -> LOAD_NAME LOAD_NAME LOAD_CONST STORE_SUBSCR
-                    elif previous_instructions[0].name == "LOAD_NAME":
-                        variable_object.set_argument(previous_instructions[0].arg)
-                        variable_object.set_type("variable")
-                    # Variable -> CallMethod LOAD_NAME LOAD_CONST STORE_SUBSCR
-                    elif previous_instructions[0].name == "CALL_METHOD":
+                    if len(previous_instructions) != 0:
+                        # Variable -> LOAD_CONST LOAD_NAME LOAD_CONST STORE_SUBSCR
+                        if previous_instructions[0].name == "LOAD_CONST":
+                            variable_object.set_argument(previous_instructions[0].arg)
+                            variable_object.set_type(str(type(previous_instructions[0].arg).__name__))
+                        # Variable -> LOAD_NAME LOAD_NAME LOAD_CONST STORE_SUBSCR
+                        elif previous_instructions[0].name == "LOAD_NAME":
+                            variable_object.set_argument(previous_instructions[0].arg)
+                            variable_object.set_type("variable")
+                        # Variable -> CallMethod LOAD_NAME LOAD_CONST STORE_SUBSCR
+                        elif previous_instructions[0].name == "CALL_METHOD":
 
-                        if by[i + 1].name == "CALL_FUNCTION":
-                            i = i + 1
-                            continue
-                        elif by[i + 1].name == "LOAD_METHOD":
-                            i = i + 1
-                            continue
+                            if by[i + 1].name == "CALL_FUNCTION":
+                                i = i + 1
+                                continue
+                            elif by[i + 1].name == "LOAD_METHOD":
+                                i = i + 1
+                                continue
 
-                        # Create a call function object
-                        call_function = CallFunctionObject()
+                            # Create a call function object
+                            call_function = CallFunctionObject()
 
-                        call_function_reader = CallFunctionReader()
-                        call_function_reader.read_call_function(call_function, previous_instructions, debug_active)
+                            call_function_reader = CallFunctionReader()
+                            call_function_reader.read_call_function(call_function, previous_instructions, debug_active)
 
-                        variable_object.set_argument(call_function)
-                        variable_object.set_type("CallMethod")
-                    elif previous_instructions[0].name == "BINARY_SUBSCR":
-                        copy = by[:i]
-                        copy.reverse()
-                        return_values = self.arguments_instructions(copy)
-                        return_values = self.recursive_identification(return_values[0])
-                        variable_object.set_argument(return_values[0])
-                        variable_object.set_type("variable")
-                    elif previous_instructions[0].name == "LOAD_ATTR":
-                        copy = by[:i]
-                        copy.reverse()
-                        return_values = self.arguments_instructions(copy)
-                        return_values = self.recursive_identification(return_values[0])
-                        variable_object.set_argument(return_values[0])
-                        variable_object.set_type("variable")
-                    else:
-                        print("STORE_SUBSCR Not registered Class Reader")
-                        print(previous_instructions[0])
+                            variable_object.set_argument(call_function)
+                            variable_object.set_type("CallMethod")
+                        elif previous_instructions[0].name == "BINARY_SUBSCR":
+                            copy = by[:i]
+                            copy.reverse()
+                            return_values = self.arguments_instructions(copy)
+                            return_values = self.recursive_identification(return_values[0])
+                            variable_object.set_argument(return_values[0])
+                            variable_object.set_type("variable")
+                        elif previous_instructions[0].name == "LOAD_ATTR":
+                            copy = by[:i]
+                            copy.reverse()
+                            return_values = self.arguments_instructions(copy)
+                            return_values = self.recursive_identification(return_values[0])
+                            variable_object.set_argument(return_values[0])
+                            variable_object.set_type("variable")
+                        else:
+                            print("STORE_SUBSCR Not registered Class Reader")
+                            print(previous_instructions[0])
 
                     # Add the variable at instruction list
                     class_object.add_instruction(variable_object)
@@ -501,15 +496,26 @@ class ClassReader:
                         class_object.add_variable(variable)
                     # Variable -> LOAD_CONST LOAD_CONST BUILD_MAP STORE_NAME
                     elif previous_instructions[0].name == "BUILD_MAP":
-                        previous_instructions.append(by[i - 2])
-                        previous_instructions.append(by[i - 3])
-                        previous_instructions.reverse()
+                        copy = by[:i]
+                        copy.reverse()
+                        return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            # Create a variable object
+                            variable = VariableObject()
+                            # The current instruction contains the name of variable
+                            variable.set_variable_name(instruction.arg)
+                            variable.set_type("variable")
+                            # Add the variable at variables list:
+                            class_object.add_variable(variable)
+                            i = i + 1
+                            continue
+                        return_values = self.recursive_identification(return_values[0])
                         # Create a variable object
                         variable = VariableObject()
                         # The current instruction contains the name of variable
                         variable.set_variable_name(instruction.arg)
-                        variable.set_argument(str(previous_instructions[0].arg) + ":" + str(previous_instructions[1].arg))
-                        variable.set_type("dictionary")
+                        variable.set_type("variable")
+                        variable.set_argument(return_values[0])
                         # Add the variable at variables list:
                         class_object.add_variable(variable)
                     # Variable -> BUILD_SET LOAD_CONST SET_UPDATE STORE_NAME
@@ -698,6 +704,16 @@ class ClassReader:
                         copy = by[:i]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            # Create a variable object
+                            variable = VariableObject()
+                            # The current instruction contains the name of variable
+                            variable.set_variable_name(instruction.arg)
+                            variable.set_type("variable")
+                            # Add the variable at variables list:
+                            class_object.add_variable(variable)
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         # Create a variable object
                         variable = VariableObject()
@@ -711,6 +727,16 @@ class ClassReader:
                         copy = by[:i]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            # Create a variable object
+                            variable = VariableObject()
+                            # The current instruction contains the name of variable
+                            variable.set_variable_name(instruction.arg)
+                            variable.set_type("variable")
+                            # Add the variable at variables list:
+                            class_object.add_variable(variable)
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         # Create a variable object
                         variable = VariableObject()
@@ -724,6 +750,16 @@ class ClassReader:
                         copy = by[:i]
                         copy.reverse()
                         return_values = self.arguments_instructions(copy)
+                        if len(return_values[0]) == 0:
+                            # Create a variable object
+                            variable = VariableObject()
+                            # The current instruction contains the name of variable
+                            variable.set_variable_name(instruction.arg)
+                            variable.set_type("variable")
+                            # Add the variable at variables list:
+                            class_object.add_variable(variable)
+                            i = i + 1
+                            continue
                         return_values = self.recursive_identification(return_values[0])
                         # Create a variable object
                         variable = VariableObject()
@@ -758,6 +794,9 @@ class ClassReader:
             elif by[counter].name == "LOAD_ATTR":
                 second_value = by[counter].arg
                 counter = counter + 1
+
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 return_values = self.recursive_identification(by[counter:])
                 first_value = return_values[0]
                 by = return_values[1]
@@ -765,10 +804,16 @@ class ClassReader:
                 return str(first_value) + "." + str(second_value), by[counter:]
             elif by[counter].name == "BINARY_SUBSCR":
                 counter = counter + 1
+
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 return_values = self.recursive_identification(by[counter:])
                 value_internal = return_values[0]
                 by = return_values[1]
                 counter = 0
+
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 return_values = self.recursive_identification(by[counter:])
                 path = return_values[0]
                 by = return_values[1]
@@ -777,12 +822,16 @@ class ClassReader:
             elif by[counter].name == "BINARY_ADD":
                 counter = counter + 1
 
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # First Operand
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
                 counter = 0
                 sum = " + " + str(return_values[0])
 
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # Second Operand
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
@@ -792,12 +841,18 @@ class ClassReader:
                 return sum, by[counter:]
             elif by[counter].name == "BINARY_MODULO":
                 counter = counter + 1
+
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # First Part
                 return_values = self.recursive_identification(by[counter:])
                 module = return_values[0]
                 by = return_values[1]
                 counter = 0
                 module = " % " + str(module)
+
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # Second Part
                 return_values = self.recursive_identification(by[counter:])
                 module = str(return_values[0]) + module
@@ -807,12 +862,16 @@ class ClassReader:
             elif by[counter].name == "BINARY_SUBTRACT":
                 counter = counter + 1
 
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # First Operand
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
                 counter = 0
                 subtract = " - " + str(return_values[0])
 
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # Second Operand
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
@@ -823,12 +882,16 @@ class ClassReader:
             elif by[counter].name == "BINARY_MULTIPLY":
                 counter = counter + 1
 
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # First Operand
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
                 counter = 0
                 subtract = " * " + str(return_values[0])
 
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # Second Operand
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
@@ -839,12 +902,16 @@ class ClassReader:
             elif by[counter].name == "BINARY_TRUE_DIVIDE":
                 counter = counter + 1
 
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # First Operand
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
                 counter = 0
                 subtract = " / " + str(return_values[0])
 
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # Second Operand
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
@@ -856,11 +923,17 @@ class ClassReader:
                 counter = counter + 1
                 operation_object = OperationObject()
                 operation_object.set_operation_type("AND")
+
+                if len(by[counter:]) == 0:
+                    return operation_object, []
                 # Left Operand
                 return_values = self.recursive_identification(by[counter:])
                 operation_object.set_first_operand(return_values[0])
                 by = return_values[1]
                 counter = 0
+
+                if len(by[counter:]) == 0:
+                    return operation_object, []
                 # Right Operand
                 return_values = self.recursive_identification(by[counter:])
                 operation_object.set_second_operand(return_values[0])
@@ -871,11 +944,17 @@ class ClassReader:
                 counter = counter + 1
                 operation_object = OperationObject()
                 operation_object.set_operation_type("OR")
+
+                if len(by[counter:]) == 0:
+                    return operation_object, []
                 # Left Operand
                 return_values = self.recursive_identification(by[counter:])
                 operation_object.set_first_operand(return_values[0])
                 by = return_values[1]
                 counter = 0
+
+                if len(by[counter:]) == 0:
+                    return operation_object, []
                 # Right Operand
                 return_values = self.recursive_identification(by[counter:])
                 operation_object.set_second_operand(return_values[0])
@@ -885,12 +964,16 @@ class ClassReader:
             elif by[counter].name == "BINARY_POWER":
                 counter = counter + 1
 
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # First Operand
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
                 counter = 0
                 subtract = " ** " + str(return_values[0])
 
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # Second Operand
                 return_values = self.recursive_identification(by[counter:])
                 by = return_values[1]
@@ -901,11 +984,17 @@ class ClassReader:
                 counter = counter + 1
                 operation_object = OperationObject()
                 operation_object.set_operation_type("FLOOR DIVIDE")
+
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # Left Operand
                 return_values = self.recursive_identification(by[counter:])
                 operation_object.set_first_operand(return_values[0])
                 by = return_values[1]
                 counter = 0
+
+                if len(by[counter:]) == 0:
+                    return "Skip", []
                 # Right Operand
                 return_values = self.recursive_identification(by[counter:])
                 operation_object.set_second_operand(return_values[0])
@@ -928,16 +1017,15 @@ class ClassReader:
                     counter = 0
                     counter_arguments = counter_arguments + 1
 
+                if counter >= len(by):
+                    return call_function, []
+
                 # Name of method
                 if by[counter].name == "LOAD_METHOD":
                     return_values = self.recursive_identification(by[counter:])
                     call_function.set_method_name("." + return_values[0])
                     by = return_values[1]
                     counter = 0
-                else:
-                    print("LOAD_METHOD not forever")
-                    print(by)
-                    exit(-1)
 
                 # Path of method
                 return_values = self.recursive_identification(by[counter:])
@@ -1020,6 +1108,8 @@ class ClassReader:
                 arguments_counter = 0
                 arguments = ""
                 while arguments_counter < number_of_elements:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
                     counter = 0
@@ -1052,11 +1142,15 @@ class ClassReader:
                 arguments_counter = 0
                 list_values = "{"
                 while arguments_counter < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     # Value
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
                     counter = 0
                     value = return_values[0]
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     # Key
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
@@ -1114,6 +1208,8 @@ class ClassReader:
                 counter_arguments = 0
                 arguments = "["
                 while counter_arguments < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
                     counter = 0
@@ -1135,6 +1231,8 @@ class ClassReader:
                 arguments = ""
 
                 while arguments_counter < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
                     counter = 0
@@ -1151,6 +1249,8 @@ class ClassReader:
 
                 arguments = ""
                 while arguments_counter < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
                     counter = 0
@@ -1164,6 +1264,8 @@ class ClassReader:
                 arguments_counter = 0
                 list_values = "("
                 while arguments_counter < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
                     counter = 0
@@ -1180,6 +1282,8 @@ class ClassReader:
                 raw_slice = list()
                 # Arguments
                 while arguments_counter < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
                     return_values = self.recursive_identification(by[counter:])
                     by = return_values[1]
                     counter = 0
@@ -1194,9 +1298,167 @@ class ClassReader:
                 final_slice = final_slice.removesuffix(":")
 
                 return final_slice, by[counter:]
+            elif by[counter].name == "BUILD_SET":
+                number_of_arguments = by[counter].arg
+                counter = counter + 1
+                arguments_counter = 0
+                list_values = "("
+                while arguments_counter < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
+                    return_values = self.recursive_identification(by[counter:])
+                    by = return_values[1]
+                    counter = 0
+                    list_values = list_values + str(return_values[0]) + ","
+                    arguments_counter = arguments_counter + 1
+
+                list_values = list_values.removesuffix(",")
+                list_values = list_values + ")"
+                return list_values, by[counter:]
+            elif by[counter].name == "SET_UPDATE":
+                counter = counter + 1
+
+                return_values = self.recursive_identification(by[counter:])
+                by = return_values[1]
+                counter = 0
+
+                return return_values[0], by[counter:]
             elif by[counter].name == "GET_ITER":
                 # Skipping...
                 return "Skip", []
+            elif by[counter].name == "BUILD_STRING":
+                number_of_arguments = by[counter].arg
+                counter = counter + 1
+                arguments_counter = 0
+                arguments = ""
+                while arguments_counter < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
+                    return_values = self.recursive_identification(by[counter:])
+                    by = return_values[1]
+                    counter = 0
+                    arguments = arguments + str(return_values[0]) + ","
+                    arguments_counter = arguments_counter + 1
+
+                arguments = arguments.removesuffix(",")
+                return arguments, by[counter:]
+            elif by[counter].name == "FORMAT_VALUE":
+                number_of_arguments = by[counter].arg
+                counter = counter + 1
+                arguments_counter = 0
+                arguments = ""
+                while arguments_counter < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "Skip", []
+                    return_values = self.recursive_identification(by[counter:])
+                    by = return_values[1]
+                    counter = 0
+                    arguments = arguments + str(return_values[0]) + ","
+                    arguments_counter = arguments_counter + 1
+
+                if len(by[counter:]) == 0:
+                    return "Skip", []
+
+                return_values = self.recursive_identification(by[counter:])
+                by = return_values[1]
+                counter = 0
+
+                arguments = arguments.removesuffix(",")
+                return return_values[0], by[counter:]
+            elif by[counter].name == "UNARY_NEGATIVE":
+                operation_name = "Unary Negative"
+                operation_object = OperationObject()
+                operation_object.set_operation_type(operation_name)
+                counter = counter + 1
+                if len(by[counter:]) == 0:
+                    return operation_object, []
+                # Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_second_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                return operation_object, by[counter:]
+            elif by[counter].name == "LIST_APPEND":
+                number_of_arguments = by[counter].arg
+                counter = counter + 1
+                arguments_counter = 0
+                arguments = ""
+                while arguments_counter < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return "", []
+                    return_values = self.recursive_identification(by[counter:])
+                    by = return_values[1]
+                    counter = 0
+                    arguments = arguments + str(return_values[0]) + ","
+                    arguments_counter = arguments_counter + 1
+
+                arguments = arguments.removesuffix(",")
+                return arguments, by[counter:]
+            elif by[counter].name == "CALL_FUNCTION_EX":
+                number_of_arguments = by[counter].arg
+                counter_arguments = 0
+                counter = counter + 1
+
+                # Create a call function Object
+                call_function = CallFunctionObject()
+
+                # Parameters
+                while counter_arguments < number_of_arguments:
+                    if len(by[counter:]) == 0:
+                        return call_function, []
+                    return_values = self.recursive_identification(by[counter:])
+                    call_function.add_parameter(return_values[0])
+                    by = return_values[1]
+                    counter = 0
+                    counter_arguments = counter_arguments + 1
+
+                if len(by[counter:]) == 0:
+                    return call_function, []
+                return_values = self.recursive_identification(by[counter:])
+                call_function.set_method_name(return_values[0])
+                by = return_values[1]
+                counter = 0
+                return call_function, by[counter:]
+            elif by[counter].name == "BINARY_MATRIX_MULTIPLY":
+                counter = counter + 1
+                operation_object = OperationObject()
+                operation_object.set_operation_type("MATRIX MULTIPLY")
+
+                if len(by[counter:]) == 0:
+                    return "Skip", []
+                # Left Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_first_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+
+                if len(by[counter:]) == 0:
+                    return "Skip", []
+                # Right Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_second_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                return operation_object, by[counter:]
+            elif by[counter].name == "BINARY_LSHIFT":
+                counter = counter + 1
+                operation_object = OperationObject()
+                operation_object.set_operation_type("SHIFT")
+                if len(by[counter:]) == 0:
+                    return operation_object, []
+                # Left Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_first_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                if len(by[counter:]) == 0:
+                    return operation_object, []
+                # Right Operand
+                return_values = self.recursive_identification(by[counter:])
+                operation_object.set_second_operand(return_values[0])
+                by = return_values[1]
+                counter = 0
+                return operation_object, by[counter:]
             else:
                 print("Recursive identification not registered Class Reader")
                 print(by[counter])
@@ -1221,7 +1483,7 @@ class ClassReader:
                 value = by.arg
                 return value, []
             else:
-                print("Recursive identification not registered File Reader Single")
+                print("Recursive identification not registered Class Reader Single")
                 print(by)
                 exit(-1)
 
@@ -1256,6 +1518,8 @@ class ClassReader:
             counter = counter + 1
             arguments_counter = 0
             while arguments_counter < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return [], []
                 # Value
                 return_values = self.arguments_instructions(by[counter:])
                 try:
@@ -1264,6 +1528,9 @@ class ClassReader:
                     instruction_list.append(return_values[0])
                 by = return_values[1]
                 counter = 0
+
+                if len(by[counter:]) == 0:
+                    return [], []
                 # Key
                 return_values = self.arguments_instructions(by[counter:])
                 try:
@@ -1279,6 +1546,9 @@ class ClassReader:
             number_of_arguments = by[counter].arg
             instruction_list.append(by[counter])
             counter = counter + 1
+
+            if len(by[counter:]) == 0:
+                return [], []
             # Parameters List
             return_values = self.arguments_instructions(by[counter:])
             try:
@@ -1291,6 +1561,8 @@ class ClassReader:
             counter_arguments = 0
             # Parameters
             while counter_arguments < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return [], []
                 return_values = self.arguments_instructions(by[counter:])
                 try:
                     instruction_list.extend(return_values[0])
@@ -1301,6 +1573,8 @@ class ClassReader:
                 counter = 0
                 counter_arguments = counter_arguments + 1
 
+            if len(by[counter:]) == 0:
+                return [], []
             # Function Name
             return_values = self.arguments_instructions(by[counter:])
             try:
@@ -1315,6 +1589,8 @@ class ClassReader:
             instruction_list = list()
             instruction_list.append(by[counter])
             counter = counter + 1
+            if len(by[counter:]) == 0:
+                return [], []
             return_values = self.arguments_instructions(by[counter:])
             try:
                 instruction_list.extend(return_values[0])
@@ -1322,19 +1598,23 @@ class ClassReader:
                 instruction_list.append(return_values[0])
             by = return_values[1]
             counter = 0
-            return_values = self.arguments_instructions(by[counter:])
-            try:
-                instruction_list.extend(return_values[0])
-            except TypeError:
-                instruction_list.append(return_values[0])
-            by = return_values[1]
-            counter = 0
+
+            if len(by[counter:]) != 0:
+                return_values = self.arguments_instructions(by[counter:])
+                try:
+                    instruction_list.extend(return_values[0])
+                except TypeError:
+                    instruction_list.append(return_values[0])
+                by = return_values[1]
+                counter = 0
             return instruction_list, by[counter:]
         elif by[counter].name == "GET_ITER":
             instruction_list = list()
             instruction_list.append(by[counter])
             counter = counter + 1
 
+            if len(by[counter:]) == 0:
+                return [], []
             # Condition
             return_values = self.arguments_instructions(by[counter:])
             try:
@@ -1344,6 +1624,8 @@ class ClassReader:
             by = return_values[1]
             counter = 0
 
+            if len(by[counter:]) == 0:
+                return [], []
             # Body
             return_values = self.arguments_instructions(by[counter:])
             try:
@@ -1384,6 +1666,8 @@ class ClassReader:
             by = return_values[1]
             counter = 0
 
+            if len(by[counter:]) == 0:
+                return [], []
             # Path of method
             return_values = self.arguments_instructions(by[counter:])
             try:
@@ -1402,6 +1686,8 @@ class ClassReader:
 
             # Parameters
             while counter_arguments < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return [], []
                 return_values = self.arguments_instructions(by[counter:])
                 try:
                     instruction_list.extend(return_values[0])
@@ -1428,6 +1714,8 @@ class ClassReader:
             counter = counter + 1
             arguments_counter = 0
             while arguments_counter < number_of_elements:
+                if len(by[counter:]) == 0:
+                    return [], []
                 return_values = self.arguments_instructions(by[counter:])
                 try:
                     instruction_list.extend(return_values[0])
@@ -1443,6 +1731,8 @@ class ClassReader:
             instruction_list.append(by[counter])
             counter = counter + 1
 
+            if len(by[counter:]) == 0:
+                return [], []
             # Function Name
             return_values = self.arguments_instructions(by[counter:])
             try:
@@ -1460,6 +1750,9 @@ class ClassReader:
             instruction_list = list()
             instruction_list.append(by[counter])
             counter = counter + 1
+
+            if len(by[counter:]) == 0:
+                return [], []
             # First Operand
             return_values = self.arguments_instructions(by[counter:])
             try:
@@ -1468,6 +1761,9 @@ class ClassReader:
                 instruction_list.append(return_values[0])
             by = return_values[1]
             counter = 0
+
+            if len(by[counter:]) == 0:
+                return [], []
             # Second Operand
             return_values = self.arguments_instructions(by[counter:])
             try:
@@ -1492,6 +1788,8 @@ class ClassReader:
             instruction_list.append(by[counter])
             counter = counter + 1
 
+            if len(by[counter:]) == 0:
+                return [], []
             # Variable Right Part
             return_values = self.arguments_instructions(by[counter:])
             try:
@@ -1509,6 +1807,8 @@ class ClassReader:
             counter_arguments = 0
             # Arguments
             while counter_arguments < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return [], []
                 return_values = self.arguments_instructions(by[counter:])
                 try:
                     instruction_list.extend(return_values[0])
@@ -1518,6 +1818,8 @@ class ClassReader:
                 counter = 0
                 counter_arguments = counter_arguments + 1
 
+            if len(by[counter:]) == 0:
+                return [], []
             # BUILD_LIST instruction
             return_values = self.arguments_instructions(by[counter:])
             try:
@@ -1532,6 +1834,8 @@ class ClassReader:
             instruction_list.append(by[counter])
             number_of_arguments = by[counter].arg
             counter = counter + 1
+            if len(by[counter:]) == 0:
+                return [], []
             return_values = self.arguments_instructions(by[counter:])
             try:
                 instruction_list.extend(return_values[0])
@@ -1541,6 +1845,8 @@ class ClassReader:
             counter = 0
             counter_arguments = 0
             while counter_arguments < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return [], []
                 return_values = self.arguments_instructions(by[counter:])
                 try:
                     instruction_list.extend(return_values[0])
@@ -1554,6 +1860,8 @@ class ClassReader:
             instruction_list = list()
             instruction_list.append(by[counter])
             counter = counter + 1
+            if len(by[counter:]) == 0:
+                return [], []
             return_values = self.arguments_instructions(by[counter:])
             try:
                 instruction_list.extend(return_values[0])
@@ -1569,6 +1877,8 @@ class ClassReader:
             counter = counter + 1
             arguments_counter = 0
             while arguments_counter < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return [], []
                 return_values = self.arguments_instructions(by[counter:])
                 try:
                     instruction_list.extend(return_values[0])
@@ -1699,6 +2009,151 @@ class ClassReader:
             by = return_values[1]
             counter = 0
             return instruction_list, by[counter:]
+        elif by[counter].name == "CALL_FUNCTION_EX":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            number_of_arguments = by[counter].arg
+            counter_arguments = 0
+            counter = counter + 1
+
+            # Parameters
+            while counter_arguments < number_of_arguments:
+                return_values = self.arguments_instructions(by[counter:])
+                try:
+                    instruction_list.extend(return_values[0])
+                except TypeError:
+                    instruction_list.append(return_values[0])
+                by = return_values[1]
+                counter = 0
+                counter_arguments = counter_arguments + 1
+
+            instructions = by[counter:]
+            if len(instructions) != 0:
+                return_values = self.arguments_instructions(instructions)
+                try:
+                    instruction_list.extend(return_values[0])
+                except TypeError:
+                    instruction_list.append(return_values[0])
+                by = return_values[1]
+                counter = 0
+            return instruction_list, by[counter:]
+        elif by[counter].name == "UNARY_NEGATIVE":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            counter = counter + 1
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            return instruction_list, by[counter:]
+        elif by[counter].name == "BUILD_SET":
+            instruction_list = list()
+            number_of_arguments = by[counter].arg
+            instruction_list.append(by[counter])
+            counter = counter + 1
+            arguments_counter = 0
+            while arguments_counter < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return [], []
+                return_values = self.arguments_instructions(by[counter:])
+                try:
+                    instruction_list.extend(return_values[0])
+                except TypeError:
+                    instruction_list.append(return_values[0])
+                by = return_values[1]
+                counter = 0
+                arguments_counter = arguments_counter + 1
+
+            return instruction_list, by[counter:]
+        elif by[counter].name == "SET_UPDATE":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            counter = counter + 1
+
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+
+            return instruction_list, by[counter:]
+        elif by[counter].name == "DICT_MERGE":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            counter = counter + 1
+            if len(by[counter:]) == 0:
+                return [], []
+            # First Part
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+
+            if len(by[counter:]) == 0:
+                return [], []
+            # Second Part
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+
+            return instruction_list, by[counter:]
+        elif by[counter].name == "LIST_APPEND":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            number_of_arguments = by[counter].arg
+            counter = counter + 1
+            arguments_counter = 0
+            while arguments_counter < number_of_arguments:
+                if len(by[counter:]) == 0:
+                    return [], []
+                return_values = self.arguments_instructions(by[counter:])
+                try:
+                    instruction_list.extend(return_values[0])
+                except TypeError:
+                    instruction_list.append(return_values[0])
+                by = return_values[1]
+                counter = 0
+                arguments_counter = arguments_counter + 1
+
+            return instruction_list, by[counter:]
+        elif by[counter].name == "LIST_TO_TUPLE":
+            instruction_list = list()
+            instruction_list.append(by[counter])
+            counter = counter + 1
+            # First Part
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+
+            # Second Part
+            return_values = self.arguments_instructions(by[counter:])
+            try:
+                instruction_list.extend(return_values[0])
+            except TypeError:
+                instruction_list.append(return_values[0])
+            by = return_values[1]
+            counter = 0
+            return instruction_list, by[counter:]
+        elif by[counter].name == "SETUP_ANNOTATIONS":
+            return [], []
+        elif by[counter].name == "POP_TOP" or by[counter].name == "DUP_TOP":
+            return [], []
         else:
             print("Arguments instructions not registered Class Reader")
             print(by[counter])

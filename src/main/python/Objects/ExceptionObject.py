@@ -2,6 +2,9 @@
 # A try except is formed from:
 # - instructions for try clause
 # - instructions for except clause
+from bytecode import FreeVar, CellVar
+
+
 class ExceptionObject:
     instruction_list_try = list()
     instruction_list_except = dict()
@@ -17,6 +20,8 @@ class ExceptionObject:
         return self.instruction_list_try
 
     def add_instruction_except(self, except_name, instruction):
+        if isinstance(except_name, (FreeVar, CellVar)):
+            return
         if except_name not in self.instruction_list_except:
             self.instruction_list_except[except_name] = list()
         self.instruction_list_except[except_name].append(instruction)
@@ -38,7 +43,7 @@ class ExceptionObject:
         string_to_return = string_to_return + internal_string_tabs + "</TRY>\n"
         if len(self.instruction_list_except) != 0:
             for key in self.instruction_list_except:
-                string_to_return = string_to_return + internal_string_tabs + "<EXCEPT> (id," + key + ")\n"
+                string_to_return = string_to_return + internal_string_tabs + "<EXCEPT> (id," + str(key) + ")\n"
                 if len(self.instruction_list_except[key]) != 0:
                     string_to_return = string_to_return + instruction_tab + "<INSTRUCTION_LIST>\n"
                     for instruction in self.instruction_list_except[key]:

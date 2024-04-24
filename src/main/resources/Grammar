@@ -119,7 +119,6 @@ Condition -> LOAD_CONST                         |
 CicleBody -> InstructionList
 
 If -> Operation POP_JUMP_IF_FALSE InstructionList POP_TOP InstructionList LOAD_CONST RETURN_VALUE <Label> If    |
-If -> Operation POP_JUMP_IF_FALSE InstructionList POP_TOP InstructionList LOAD_CONST RETURN_VALUE <Label> If    |
       Operation POP_JUMP_IF_TRUE InstructionList POP_TOP InstructionList LOAD_CONST RETURN_VALUE <Label> Else   |
       Operation POP_JUMP_IF_TRUE InstructionList POP_TOP InstructionList LOAD_CONST RETURN_VALUE <Label> Else   |
       /* empty */

@@ -1,5 +1,8 @@
+from typing import Iterable
+
 from bytecode import CellVar
 
+from Downloader.ProgressionCheck import ProgressDetection
 from Objects.CallFunctionObject import CallFunctionObject
 from Objects.CicleObject import CicleObject
 from Objects.ClassObject import ClassObject
@@ -15,15 +18,19 @@ from Objects.VariableObject import VariableObject
 # This class detect the superclasses of a specific class
 class SuperclassDetector:
     functions_list_of_classes = {}
+    progressor = ProgressDetection()
 
-    def __init__(self, system_object):
+    def __init__(self, system_object, terminal):
+        self.progressor = ProgressDetection()
         self.functions_list_of_classes = {}
-        self.get_all_functions(system_object)
-        self.detect_with_functions(system_object)
-        self.adjust_superclass(system_object)
+        self.get_all_functions(system_object, terminal)
+        self.detect_with_functions(system_object, terminal)
+        self.adjust_superclass(system_object, terminal)
 
-    def get_all_functions(self, system_object):
+    def get_all_functions(self, system_object, terminal):
         for i in range(system_object.get_class_number()):
+            self.progressor.update(len(system_object.get_class_names()), i, "SuperclassDetector get all functions",
+                                   terminal)
             class_object = system_object.get_class_object_with_position(i)
             if isinstance(class_object, FileObject):
                 for single_class in class_object.get_class_list():
@@ -33,8 +40,10 @@ class SuperclassDetector:
                             self.functions_list_of_classes[key] = list()
                         self.functions_list_of_classes[key].append(function_object.get_function_name())
 
-    def detect_with_functions(self, system_object):
+    def detect_with_functions(self, system_object, terminal):
         for i in range(system_object.get_class_number()):
+            self.progressor.update(len(system_object.get_class_names()), i, "SuperclassDetector detect with functions",
+                                   terminal)
             class_object = system_object.get_class_object_with_position(i)
             if isinstance(class_object, FileObject):
                 for single_class in class_object.get_class_list():
@@ -76,13 +85,15 @@ class SuperclassDetector:
         elif list_ is None:
             pass
         else:
-            if not isinstance(list_, (int, str)):
+            if isinstance(list_, Iterable):
                 for instruction in list_:
                     self.recursive_detection(instruction)
 
     # This function adjust the path of superclasses detected
-    def adjust_superclass(self, system_object):
+    def adjust_superclass(self, system_object, terminal):
         for i in range(system_object.get_class_number()):
+            self.progressor.update(len(system_object.get_class_names()), i, "SuperclassDetector adjust superclass",
+                                   terminal)
             class_object = system_object.get_class_object_with_position(i)
             if isinstance(class_object, ClassObject):
                 list_to_delete = list()

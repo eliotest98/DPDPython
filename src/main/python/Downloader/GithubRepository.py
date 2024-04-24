@@ -30,7 +30,8 @@ class GithubRepository:
                 if self.branch_name == "":
                     Repo.clone_from(self.repository_url, self.folder, progress=Progress())
                 else:
-                    Repo.clone_from(self.repository_url, self.folder, branch=self.branch_name, progress=Progress())
+                    Repo.clone_from(self.repository_url, self.folder, branch=self.branch_name,
+                                    progress=Progress())
                 print("Repository Downloaded!")
             else:
                 print("Directory is not empty")
@@ -46,7 +47,8 @@ class GithubRepository:
                     pass
             else:
                 try:
-                    Repo.clone_from(self.repository_url, self.folder, branch=self.branch_name, progress=Progress())
+                    Repo.clone_from(self.repository_url, self.folder, branch=self.branch_name,
+                                    progress=Progress())
                 except:
                     pass
             print("Repository Downloaded!")
@@ -79,9 +81,9 @@ class GithubRepository:
                 except:
                     pass
 
-    def compile_repository_files(self):
+    def compile_repository_files(self, terminal):
         print("Compiling all files")
-        Compiler.compile_repository_files(self.folder)
+        Compiler.compile_repository_files(self.folder, terminal)
         print("Successfully Compiled!")
 
     def delete_repository(self):

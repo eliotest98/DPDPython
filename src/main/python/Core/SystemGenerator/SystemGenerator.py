@@ -5,6 +5,7 @@ from Core.SystemGenerator.Hierarchy.InheritanceHierarchy import InheritanceHiera
 from Core.SystemGenerator.Objects.BehavioralData import BehavioralData
 from Core.SystemGenerator.Objects.ClusterSet import ClusterSet, Entry
 from Core.SystemGenerator.Objects.MatrixContainer import MatrixContainer
+from Downloader.ProgressionCheck import ProgressDetection
 from Objects.CallFunctionObject import CallFunctionObject
 from Objects.VariableObject import VariableObject
 
@@ -13,19 +14,30 @@ class SystemGenerator:
     system_object = ""
     matrix_container = ""
     hierarchy_list = list()
+    progressor = ProgressDetection()
 
-    def __init__(self, system_object):
+    def __init__(self, system_object, terminal):
+        self.progressor = ProgressDetection()
         self.system_object = system_object
         self.matrix_container = MatrixContainer()
         self.hierarchy_list = list()
-        self.hierarchy_list = HierarchyDetection(system_object).get_hierarchy_list()
+        self.progressor.update(7, 0, "SystemGenerator", terminal)
+        self.hierarchy_list = HierarchyDetection(system_object, terminal).get_hierarchy_list()
+        self.progressor.update(7, 1, "SystemGenerator, hierarchy detection", terminal)
 
         self.matrix_container.set_class_name_list(self.system_object.get_class_names())
+
+        self.progressor.update(7, 2, "SystemGenerator, generalization matrix", terminal)
         self.matrix_container.set_generalization_matrix(self.get_generalization_matrix())
+        self.progressor.update(7, 3, "SystemGenerator, association matrix", terminal)
         self.matrix_container.set_association_matrix(self.get_association_matrix())
+        self.progressor.update(7, 4, "SystemGenerator, association with inheritance matrix", terminal)
         self.association_with_inheritance_matrix()
+        self.progressor.update(7, 5, "SystemGenerator, double dispatch matrix", terminal)
         self.double_dispatch_matrix()
+        self.progressor.update(7, 6, "SystemGenerator, invoked method in inherited method matrix", terminal)
         self.invoked_method_in_inherited_method_matrix()
+        self.progressor.update(7, 7, "SystemGenerator, set method invocations matrix", terminal)
         self.matrix_container.set_method_invocations_matrix(self.get_method_invocations_matrix())
 
     def get_method_invocations_matrix(self):
