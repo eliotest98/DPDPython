@@ -12,3 +12,5 @@ In python folder there are some packages:
  - Oracle: in this package there are some classes for test
  - Readers: in this package there are the readers for read the bytecode
  - Utils: in this package there are some utils class
+
+ For execute the tool just use the "Start" configuration with PyCharm or execute the file Starter.py

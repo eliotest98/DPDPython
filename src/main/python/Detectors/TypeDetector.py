@@ -1,4 +1,4 @@
-from Detector.ImportsDetector import ImportsDetector
+from Detectors.ImportsDetector import ImportsDetector
 from Downloader.ProgressionCheck import ProgressDetection
 from Objects.CallFunctionObject import CallFunctionObject
 from Objects.FileObject import FileObject

@@ -1,0 +1,22 @@
+# Usa un'immagine base di Python
+FROM python:3.10
+
+# Imposta la directory di lavoro
+WORKDIR /app
+
+ENV PYTHONPATH /app/src/main/python:$PYTHONPATH
+
+# Copia i file di requisiti
+COPY requirements.txt .
+
+# Installa i requisiti
+RUN pip install -r requirements.txt
+
+# Copia il resto del codice sorgente
+COPY . .
+
+# Esegui il tuo programma
+CMD ["python", "/app/src/main/python/Core/Starter.py"]
+
+
+Se docker non funziona esegui il cmd da amministratore e scrivi questo: bcdedit /set hypervisorlaunchtype on

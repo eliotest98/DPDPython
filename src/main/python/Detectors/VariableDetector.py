@@ -1,4 +1,4 @@
-from Detector.ScopeDetector import ScopeDetector
+from Detectors.ScopeDetector import ScopeDetector
 from Downloader.ProgressionCheck import ProgressDetection
 from Objects.ClassObject import ClassObject
 from Objects.VariableObject import VariableObject
