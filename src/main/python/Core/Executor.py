@@ -15,11 +15,9 @@ from Downloader.GithubRepository import GithubRepository
 from Downloader.ProgressionCheck import ProgressDetection
 from Utils.DesignPattern import DesignPattern
 
-current_directory = os.getcwd().replace("\\Core", "")
+current_directory = os.path.dirname(os.getcwd())
 # Get the resource directory
-resource_directory = current_directory.replace("\\python", "") + "\\resources"
-# Get the selected directory
-selected_directory = os.getcwd().replace("\\Core", "")
+resource_directory = os.path.join(os.path.dirname(current_directory), "resources")
 
 
 def execute(repository_owner, repository_name, branch_name, debug_active, terminal, pattern_list, ast,
@@ -29,24 +27,32 @@ def execute(repository_owner, repository_name, branch_name, debug_active, termin
     bytecode = ReadBytecode(debug_active)
     # Download the file from a repository
     repository = GithubRepository(repository_owner + "/" + repository_name,
-                                  resource_directory + "\\GeneratedFiles\\DirectorySelected", branch_name)
-    terminal.config(state="normal")
-    terminal.insert(tk.END, "Downloading Repository..." + "\n")
-    terminal.see(tk.END)
-    terminal.config(state="disabled")
-    terminal.update_idletasks()
+                                  os.path.join(resource_directory, "GeneratedFiles", "DirectorySelected"), branch_name)
+
+    if terminal is not None:
+        terminal.config(state="normal")
+        terminal.insert(tk.END, "Downloading Repository..." + "\n")
+        terminal.see(tk.END)
+        terminal.config(state="disabled")
+        terminal.update_idletasks()
+
     repository.download_repository()
-    terminal.config(state="normal")
-    terminal.insert(tk.END, "Repository Downloaded!" + "\n")
-    terminal.see(tk.END)
-    terminal.config(state="disabled")
-    terminal.update_idletasks()
+
+    if terminal is not None:
+        terminal.config(state="normal")
+        terminal.insert(tk.END, "Repository Downloaded!" + "\n")
+        terminal.see(tk.END)
+        terminal.config(state="disabled")
+        terminal.update_idletasks()
+
     repository.change_permissions()
     repository.delete_files_unused()
+    repository.delete_folders_unused()
     repository.compile_repository_files(terminal)
     bytecode.select_file(
-        resource_directory + "\\GeneratedFiles\\DirectorySelected\\" + repository_owner + "\\" + repository_name + "\\" + "\\Source",
-        resource_directory + "\\GeneratedFiles\\Oracles\\" + repository_owner + "\\" + repository_name, terminal)
+        os.path.join(resource_directory, "GeneratedFiles", "DirectorySelected", repository_owner, repository_name,
+                     "Source"),
+        os.path.join(resource_directory, "GeneratedFiles", "Oracles", repository_owner, repository_name), terminal)
 
     if delete_repository:
         repository.delete_repository()
@@ -57,8 +63,8 @@ def execute(repository_owner, repository_name, branch_name, debug_active, termin
         chunk_size = 1024  # Scegli una dimensione di chunk appropriata
         large_string = bytecode.get_system_object().abstract_syntax_tree(terminal, ast, False)
 
-        with open(resource_directory + "\\GeneratedFiles\\Oracles\\" +
-                  repository_owner + "\\SystemObject.xml", "w", encoding='utf-8') as f:
+        with open(os.path.join(resource_directory, "GeneratedFiles", "Oracles", repository_owner, "SystemObject.xml"),
+                  "w", encoding='utf-8') as f:
             for i in range(0, len(large_string), chunk_size):
                 progressor.update(len(large_string), i, "Save AST", terminal)
                 try:
@@ -69,14 +75,15 @@ def execute(repository_owner, repository_name, branch_name, debug_active, termin
     except FileNotFoundError:
         # Create the directory if not exist
         try:
-            os.makedirs(resource_directory + "\\GeneratedFiles\\Oracles\\" + repository_owner + "\\" + repository_name)
+            os.makedirs(
+                os.path.join(resource_directory, "GeneratedFiles", "Oracles", repository_owner, repository_name))
         except OSError as error:
             pass
         chunk_size = 1024  # Scegli una dimensione di chunk appropriata
         large_string = bytecode.get_system_object().abstract_syntax_tree(terminal, ast, False)
 
-        with open(resource_directory + "\\GeneratedFiles\\Oracles\\" +
-                  repository_owner + "\\SystemObject.xml", "w", encoding='utf-8') as f:
+        with open(os.path.join(resource_directory, "GeneratedFiles", "Oracles", repository_owner, "SystemObject.xml"),
+                  "w", encoding='utf-8') as f:
             for i in range(0, len(large_string), chunk_size):
                 progressor.update(len(large_string), i, "Save AST", terminal)
                 try:
@@ -93,10 +100,14 @@ def execute(repository_owner, repository_name, branch_name, debug_active, termin
     MethodOriginDetector(bytecode.get_system_object(), terminal)
     TypeDetector(bytecode.get_system_object(), terminal)
 
-    large_string = bytecode.get_system_object().abstract_syntax_tree(terminal, ast, True)
+    if ast is not None:
+        large_string = bytecode.get_system_object().abstract_syntax_tree(terminal, ast, True)
+    else:
+        large_string = bytecode.get_system_object().abstract_syntax_tree(terminal, ast, False)
     # Write on a file the Abstract Syntax Tree (TypeChecked)
-    with open(resource_directory + "\\GeneratedFiles\\Oracles\\" +
-              repository_owner + "\\SystemObjectAdjusted.xml", "w", encoding='utf-8') as f:
+    with open(
+            os.path.join(resource_directory, "GeneratedFiles", "Oracles", repository_owner, "SystemObjectAdjusted.xml"),
+            "w", encoding='utf-8') as f:
         for i in range(0, len(large_string), chunk_size):
             progressor.update(len(large_string), i, "Save AST Adjusted", terminal)
             try:
@@ -104,12 +115,15 @@ def execute(repository_owner, repository_name, branch_name, debug_active, termin
             except UnicodeEncodeError:
                 f.write(large_string[i:i + chunk_size].encode('utf-16', 'surrogatepass').decode('utf-16'))
 
-    terminal.config(state="normal")
-    terminal.insert(tk.END,
-                    "Number of classes to control: " + str(len(bytecode.get_system_object().get_class_names())) + "\n")
-    terminal.see(tk.END)
-    terminal.config(state="disabled")
-    terminal.update_idletasks()
+    if terminal is not None:
+        terminal.config(state="normal")
+        terminal.insert(tk.END,
+                        "Number of classes to control: " + str(
+                            len(bytecode.get_system_object().get_class_names())) + "\n")
+        terminal.see(tk.END)
+        terminal.config(state="disabled")
+        terminal.update_idletasks()
+
     print("Number of classes to control: " + str(len(bytecode.get_system_object().get_class_names())))
     string_to_return = string_to_return + "Number of controlled class: " + str(
         len(bytecode.get_system_object().get_class_names()))
@@ -118,28 +132,33 @@ def execute(repository_owner, repository_name, branch_name, debug_active, termin
     # Design Pattern Detection
     #
     detection = DesignPatternDetection()
-    terminal.config(state="normal")
-    terminal.insert(tk.END, "Generating System...\n")
-    terminal.config(state="disabled")
-    terminal.see(tk.END)
-    terminal.update_idletasks()
+
+    if terminal is not None:
+        terminal.config(state="normal")
+        terminal.insert(tk.END, "Generating System...\n")
+        terminal.config(state="disabled")
+        terminal.see(tk.END)
+        terminal.update_idletasks()
     print("Generating System...")
     # Get informations from system object
     system_generator = SystemGenerator(bytecode.get_system_object(), terminal)
-    terminal.config(state="normal")
-    terminal.insert(tk.END, "Detection...\n")
-    terminal.config(state="disabled")
-    terminal.see(tk.END)
-    terminal.update_idletasks()
+
+    if terminal is not None:
+        terminal.config(state="normal")
+        terminal.insert(tk.END, "Detection...\n")
+        terminal.config(state="disabled")
+        terminal.see(tk.END)
+        terminal.update_idletasks()
     print("Detection...")
     pattern_results = list()
     for pattern in pattern_list:
         print("Control Design Pattern: " + pattern)
-        terminal.config(state="normal")
-        terminal.insert(tk.END, "Control Design Pattern: " + pattern + "\n")
-        terminal.config(state="disabled")
-        terminal.see(tk.END)
-        terminal.update_idletasks()
+        if terminal is not None:
+            terminal.config(state="normal")
+            terminal.insert(tk.END, "Control Design Pattern: " + pattern + "\n")
+            terminal.config(state="disabled")
+            terminal.see(tk.END)
+            terminal.update_idletasks()
         pattern_result = PatternResult(pattern)
         # For now there is only one descriptor
         pattern_descriptor = detection.set_design_pattern(pattern)
@@ -154,12 +173,14 @@ def execute(repository_owner, repository_name, branch_name, debug_active, termin
                 # TODO da vedere in quanto dipende dalle gerarchie che in python sono multi
                 if len(hierarchies_matrix_container.get_association_matrix()) > 2:
                     print(hierarchies_matrix_container.get_association_matrix().to_string())
-                    terminal.config(state="normal")
-                    terminal.insert(tk.END, "This instance have a multiple hierarchy, this is the structure:\n")
-                    terminal.insert(tk.END, hierarchies_matrix_container.get_association_matrix().to_string() + "\n")
-                    terminal.config(state="disabled")
-                    terminal.see(tk.END)
-                    terminal.update_idletasks()
+                    if terminal is not None:
+                        terminal.config(state="normal")
+                        terminal.insert(tk.END, "This instance have a multiple hierarchy, this is the structure:\n")
+                        terminal.insert(tk.END,
+                                        hierarchies_matrix_container.get_association_matrix().to_string() + "\n")
+                        terminal.config(state="disabled")
+                        terminal.see(tk.END)
+                        terminal.update_idletasks()
                     string_to_return = string_to_return + "\nThis instance have a multiple hierarchy, this is the structure:"
                     string_to_return = string_to_return + str(hierarchies_matrix_container) + "\n"
                     continue
@@ -172,11 +193,12 @@ def execute(repository_owner, repository_name, branch_name, debug_active, termin
                 detection.generate_results(hierarchies_matrix_container, pattern_descriptor, pattern_result)
         pattern_results.append(pattern_result)
 
-    terminal.config(state="normal")
-    terminal.insert(tk.END, "End Detection\n")
-    terminal.config(state="disabled")
-    terminal.see(tk.END)
-    terminal.update_idletasks()
+    if terminal is not None:
+        terminal.config(state="normal")
+        terminal.insert(tk.END, "End Detection\n")
+        terminal.config(state="disabled")
+        terminal.see(tk.END)
+        terminal.update_idletasks()
     print("End Detection")
 
     #
@@ -186,50 +208,55 @@ def execute(repository_owner, repository_name, branch_name, debug_active, termin
     if branch_name != "":
         string_result = string_result + "\\" + branch_name
 
-    terminal.config(state="normal")
-    terminal.insert(tk.END, "For " + string_result + " are individuated the current instances:\n")
+    if terminal is not None:
+        terminal.config(state="normal")
+        terminal.insert(tk.END, "For " + string_result + " are individuated the current instances:\n")
     print("\nFor " + string_result + " are individuated the current instances:")
     for pattern_individuated in pattern_results:
         string_to_return = string_to_return + "\n- Instance of: " + pattern_individuated.get_pattern_name() + "\n"
-        terminal.insert(tk.END, " - Instance of: " + pattern_individuated.get_pattern_name() + "\n")
+        if terminal is not None:
+            terminal.insert(tk.END, " - Instance of: " + pattern_individuated.get_pattern_name() + "\n")
         print(" - Instance of: " + pattern_individuated.get_pattern_name())
         if len(pattern_individuated.get_pattern_instances()) == 0:
             string_to_return = string_to_return + "   Nothing\n"
-            terminal.insert(tk.END, "    Nothing", "\n")
+            if terminal is not None:
+                terminal.insert(tk.END, "    Nothing", "\n")
             print("   Nothing")
         for pattern_instance in pattern_individuated.get_pattern_instances():
             print("  ", pattern_instance.get_instance_counter(), " instance: ")
             print("  " + str(pattern_instance))
-            terminal.insert(tk.END, "    " + str(pattern_instance.get_instance_counter()) + " instance: " + "\n")
-            terminal.insert(tk.END, "    " + str(pattern_instance) + "\n")
+            if terminal is not None:
+                terminal.insert(tk.END, "    " + str(pattern_instance.get_instance_counter()) + " instance: " + "\n")
+                terminal.insert(tk.END, "    " + str(pattern_instance) + "\n")
             string_to_return = string_to_return + "  " + str(pattern_instance.get_instance_counter()) + " instance: "
             string_to_return = string_to_return + "   " + str(pattern_instance) + "\n"
         string_to_return = string_to_return + "\n"
         string_to_return = string_to_return + "------------------------------------------------------------------------------"
         string_to_return = string_to_return + "\n"
-        terminal.insert(tk.END, "-----------------------------------------------------------\n")
+        if terminal is not None:
+            terminal.insert(tk.END, "-----------------------------------------------------------\n")
         print("----------------------------------------")
-    terminal.config(state="disabled")
-    terminal.see(tk.END)
-    terminal.update_idletasks()
+    if terminal is not None:
+        terminal.config(state="disabled")
+        terminal.see(tk.END)
+        terminal.update_idletasks()
     return string_to_return
 
 
 def execute_test(test_name, debug_active, terminal, ast):
     # Compile Oracle Files because there isn't invoked from any class
-    Compiler.compile_file(current_directory + "\\Oracle\\Adapter\\AdapterPattern.py")
-    Compiler.compile_repository_files(current_directory + "\\Oracle\\AdapterExtended", terminal)
-    Compiler.compile_file(current_directory + "\\Oracle\\Classes\\Classes.py")
-    Compiler.compile_file(current_directory + "\\Oracle\\Test\\__init__.py")
+    Compiler.compile_file(os.path.join(current_directory, "Oracle", "Adapter", "AdapterPattern.py"))
+    Compiler.compile_repository_files(os.path.join(current_directory, "Oracle", "AdapterExtended"), terminal)
+    Compiler.compile_file(os.path.join(current_directory, "Oracle", "Classes", "Classes.py"))
+    Compiler.compile_file(os.path.join(current_directory, "Oracle", "Test", "__init__.py"))
 
     bytecode = ReadBytecode(debug_active)
     # Download the file from a repository
-    bytecode.select_file(current_directory + "\\Oracle\\" + test_name, resource_directory + "\\Oracles\\" + test_name,
-                         terminal)
+    bytecode.select_file(os.path.join(current_directory, "Oracle", test_name),
+                         os.path.join(resource_directory, "Oracles", test_name), terminal)
 
     # Write on a file the Abstract Syntax Tree of all system
-    with open(resource_directory + "\\Oracles\\" +
-              test_name + "\\SystemObject.xml", "w", encoding='utf-8') as f:
+    with open(os.path.join(resource_directory, "Oracles", test_name, "SystemObject.xml"), "w", encoding='utf-8') as f:
         f.writelines(bytecode.get_system_object().abstract_syntax_tree(terminal, ast, False))
 
     #
@@ -242,9 +269,12 @@ def execute_test(test_name, debug_active, terminal, ast):
     TypeDetector(bytecode.get_system_object(), terminal)
 
     # Write on a file the Abstract Syntax Tree (TypeChecked)
-    with open(resource_directory + "\\Oracles\\" +
-              test_name + "\\SystemObjectAdjusted.xml", "w", encoding='utf-8') as f:
-        f.writelines(bytecode.get_system_object().abstract_syntax_tree(terminal, ast, True))
+    with open(os.path.join(resource_directory, "Oracles", test_name, "SystemObjectAdjusted.xml"), "w",
+              encoding='utf-8') as f:
+        if ast is not None:
+            f.writelines(bytecode.get_system_object().abstract_syntax_tree(terminal, ast, True))
+        else:
+            f.writelines(bytecode.get_system_object().abstract_syntax_tree(terminal, ast, False))
 
     #
     # Design Pattern Detection
@@ -280,31 +310,41 @@ def execute_test(test_name, debug_active, terminal, ast):
     #
     # Results
     #
-    terminal.config(state="normal")
-    terminal.insert(tk.END, "For " + test_name + " are individuated the current instances:\n")
+    if terminal is not None:
+        terminal.config(state="normal")
+        terminal.insert(tk.END, "For " + test_name + " are individuated the current instances:\n")
+
     print("\nFor " + test_name + " are individuated the current instances:")
     for pattern_individuated in pattern_results:
         print("\t- Instance of: " + pattern_individuated.get_pattern_name())
-        terminal.insert(tk.END, " - Instance of: " + pattern_individuated.get_pattern_name() + "\n")
+        if terminal is not None:
+            terminal.insert(tk.END, " - Instance of: " + pattern_individuated.get_pattern_name() + "\n")
+
         for pattern_instance in pattern_individuated.get_pattern_instances():
-            terminal.insert(tk.END, "    Number of instances: ", str(pattern_instance.get_instance_counter()), "\n")
-            terminal.insert(tk.END, "    " + str(pattern_instance) + "\n")
+            if terminal is not None:
+                terminal.insert(tk.END, "    Number of instances: ", str(pattern_instance.get_instance_counter()), "\n")
+                terminal.insert(tk.END, "    " + str(pattern_instance) + "\n")
             print("\t\tNumber of instances: ", pattern_instance.get_instance_counter())
             print("\t\t" + str(pattern_instance))
-        terminal.insert(tk.END, "-----------------------------------------------------------\n")
+
+        if terminal is not None:
+            terminal.insert(tk.END, "-----------------------------------------------------------\n")
+
         print("-----------------------------------------------------")
-    terminal.config(state="disabled")
-    terminal.see(tk.END)
-    terminal.update_idletasks()
+
+    if terminal is not None:
+        terminal.config(state="disabled")
+        terminal.see(tk.END)
+        terminal.update_idletasks()
 
 
 def execute_niche(args):
     debug_active, start, end, terminal, pattern_list = args
-    niche_df = pd.read_excel(resource_directory + "/NICHE.xlsx")
+    niche_df = pd.read_excel(os.path.join(resource_directory, "NICHE.xlsx"))
     counter = 0
 
     # Write on a file the Abstract Syntax Tree of all system
-    with open(resource_directory + "\\GeneratedFiles\\Oracles\\" + "log.txt", "a", encoding='utf-8') as f:
+    with open(os.path.join(resource_directory, "GeneratedFiles", "Oracles", "log.txt"), "a", encoding='utf-8') as f:
         for repository in niche_df["GitHub Repo"]:
             if counter < start:
                 counter = counter + 1
@@ -317,13 +357,13 @@ def execute_niche(args):
 
 
 def execute_niche_extended(debug_active, start, end, terminal, pattern_list, ast):
-    niche_df = pd.read_excel(resource_directory + "/NICHE.xlsx")
+    niche_df = pd.read_excel(os.path.join(resource_directory, "NICHE.xlsx"))
     counter = 0
 
-    os.remove(resource_directory + "\\GeneratedFiles\\Oracles\\log.txt")
+    os.remove(os.path.join(resource_directory, "GeneratedFiles", "Oracles", "log.txt"))
 
     # Write on a file the Abstract Syntax Tree of all system
-    with open(resource_directory + "\\GeneratedFiles\\Oracles\\" + "log.txt", "a", encoding='utf-8') as f:
+    with open(os.path.join(resource_directory, "GeneratedFiles", "Oracles", "log.txt"), "a", encoding='utf-8') as f:
         for repository in niche_df["GitHub Repo"]:
             if counter < start:
                 counter = counter + 1

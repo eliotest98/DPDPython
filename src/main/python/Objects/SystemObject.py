@@ -72,7 +72,10 @@ class SystemObject:
             if product:
                 if single_file.get_file_name() != "":
                     if not self.is_item_in_treeview(ast, "", single_file.get_file_name()):
-                        ast.insert("", counter, single_file.get_file_name(), text=single_file.get_file_name())
+                        try:
+                            ast.insert("", counter, single_file.get_file_name(), text=single_file.get_file_name())
+                        except _tkinter.TclError:
+                            pass
                     if not self.is_item_in_treeview(ast, single_file.get_file_name(), single_file.get_class_name()):
                         try:
                             ast.insert(single_file.get_file_name(), counter, single_file.get_class_name(),
@@ -95,7 +98,8 @@ class SystemObject:
         return return_string
 
     def is_item_in_treeview(self, treeview, parent, item):
-        for child in treeview.get_children(parent):
-            if treeview.item(child, 'text') == item:
-                return True
+        if treeview is not None:
+            for child in treeview.get_children(parent):
+                if treeview.item(child, 'text') == item:
+                    return True
         return False

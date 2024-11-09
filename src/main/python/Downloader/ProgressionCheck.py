@@ -13,10 +13,11 @@ class ProgressDetection:
     def update(self, max_count, cur_count, what, terminal):
         pbar = tqdm(total=max_count, desc=what)
         pbar.update(cur_count)
-        terminal.config(state="normal")
-        terminal.insert(tk.END,
-                        what + ": " + str(int(cur_count / max_count * 100)) + "% " + str(cur_count) + "/" + str(
-                            max_count) + "\n")
-        terminal.see(tk.END)
-        terminal.config(state="disabled")
-        terminal.update_idletasks()
+        if terminal is not None:
+            terminal.config(state="normal")
+            terminal.insert(tk.END,
+                            what + ": " + str(int(cur_count / max_count * 100)) + "% " + str(cur_count) + "/" + str(
+                                max_count) + "\n")
+            terminal.see(tk.END)
+            terminal.config(state="disabled")
+            terminal.update_idletasks()

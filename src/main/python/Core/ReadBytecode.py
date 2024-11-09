@@ -26,22 +26,21 @@ class ReadBytecode:
             counter = 1
             for directory in os.listdir(current_directory):
                 self.progressor.update(len(os.listdir(current_directory)), counter, "Reading bytecode...", terminal)
-                if os.path.isdir(current_directory + "\\" + directory):
-                    self.select_file(current_directory + "\\" + directory, resource_directory + "\\" + directory,
+                if os.path.isdir(os.path.join(current_directory, directory)):
+                    self.select_file(os.path.join(current_directory, directory),
+                                     os.path.join(resource_directory, directory),
                                      terminal)
                 else:
                     if directory.__contains__(".pyc"):
-                        self.select_file(current_directory + "\\" + directory, resource_directory, terminal)
+                        self.select_file(os.path.join(current_directory, directory), resource_directory, terminal)
                 counter = counter + 1
-        else:
-            if os.path.isfile(current_directory):
-                if self.debug_active == 1:
-                    print(current_directory)
-                self.read_bytecode(current_directory, resource_directory)
-            else:
-                # TODO Da vedere se gestire un eccezione
-                print("error")
+        elif os.path.isfile(current_directory):
+            if self.debug_active == 1:
                 print(current_directory)
+            self.read_bytecode(current_directory, resource_directory)
+        else:
+            print("Error this string is not a directory or a file!")
+            print(current_directory)
 
     def visualize_bytecode(self, bytecode_copy):
         print("\nAnalyzing...")
@@ -67,7 +66,7 @@ class ReadBytecode:
         if self.debug_active == 1:
             self.visualize_bytecode(by.copy())
 
-        directory_split = code_obj.co_filename.split("\\")
+        directory_split = code_obj.co_filename.split(os.path.sep)
         file_name = directory_split[len(directory_split) - 1]
 
         if self.debug_active == 1:
@@ -97,14 +96,14 @@ class ReadBytecode:
             pass
 
         if save_directory.__contains__("__pycache__"):
-            save_directory = save_directory.replace("\\__pycache__", "")
+            save_directory = os.path.dirname(save_directory)
         try:
             # Write on a file the Abstract Syntax Tree
-            with open(save_directory + "\\" + file_name.replace(".py", "") + ".xml", "w", encoding='utf-8') as f:
+            with open(os.path.join(save_directory, file_name.replace(".py", ".xml")), "w", encoding='utf-8') as f:
                 f.write(ast)
         except UnicodeEncodeError:
             # Write on a file the Abstract Syntax Tree
-            with open(save_directory + "\\" + file_name.replace(".py", "") + ".xml", "w", encoding='utf-16') as f:
+            with open(os.path.join(save_directory, file_name.replace(".py", ".xml")), "w", encoding='utf-16') as f:
                 f.write(ast.encode('utf-16', 'surrogatepass').decode('utf-16'))
 
     def get_system_object(self):

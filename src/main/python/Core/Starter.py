@@ -8,11 +8,13 @@ import pandas as pd
 from Core.Executor import execute_test, execute, single_execution
 from Utils.DesignPattern import DesignPattern
 
+oracles_list = ["Adapter", "AdapterExtended", "Classes", "Test"]
+current_directory = os.path.dirname(os.getcwd())
+resource_directory = os.path.join(os.path.dirname(current_directory), "resources")
+
 
 class Interface:
     current_interface = "GithubDetector"
-    current_directory = os.getcwd().replace("\\Core", "")
-    resource_directory = current_directory.replace("\\python", "") + "\\resources"
 
     def __init__(self, master, current_interface):
         self.master = master
@@ -28,9 +30,9 @@ class Interface:
             self.create_listbox(list(DesignPattern))
             self.create_text_box()
         elif current_interface == "OracleTest":
-            self.create_listbox(["Adapter", "AdapterExtended", "Classes", "Test"])
+            self.create_listbox(oracles_list)
         elif current_interface == "Niche":
-            niche_df = pd.read_excel(self.resource_directory + "/NICHE.xlsx")
+            niche_df = pd.read_excel(resource_directory + "/NICHE.xlsx")
             self.create_listbox(list(DesignPattern))
             self.create_listbox_niche(niche_df["GitHub Repo"])
 
@@ -233,7 +235,7 @@ class Interface:
                 self.terminal.insert(tk.END, "Please insert a Github Repository for example: eliotest98\\DPDPython")
                 self.terminal.config(state="disabled")
             else:
-                with open(self.resource_directory + "\\GeneratedFiles\\Oracles\\" + "log.txt", "a",
+                with open(os.path.join(resource_directory, "GeneratedFiles", "Oracles", "log.txt"), "a",
                           encoding='utf-8') as f:
                     string_to_add = execute(entered_text_owner, entered_text_repository, "", debug_mode, self.terminal,
                                             selected_values, self.ast, delete_repository)
@@ -259,10 +261,13 @@ class Interface:
                 self.terminal.config(state="disabled")
                 return
 
-            os.remove(self.resource_directory + "\\GeneratedFiles\\Oracles\\log.txt")
+            try:
+                os.remove(os.path.join(resource_directory, "GeneratedFiles", "Oracles", "log.txt"))
+            except FileNotFoundError:
+                pass
             counter = 1
             for niche_github in selected_values_niche:
-                with open(self.resource_directory + "\\GeneratedFiles\\Oracles\\" + "log.txt", "a",
+                with open(os.path.join(resource_directory, "GeneratedFiles", "Oracles", "log.txt"), "a",
                           encoding='utf-8') as f:
                     string_to_add = single_execution(niche_github, debug_mode, self.terminal, selected_values, self.ast,
                                                      delete_repository)
@@ -278,6 +283,84 @@ class Interface:
 
 
 if __name__ == '__main__':
-    root = tk.Tk()
-    my_interface = Interface(root, "GithubDetector")
-    root.mainloop()
+    interface_list = ["Github Detector", "Oracle Test"]
+    try:
+        os.makedirs(os.path.join(resource_directory, "GeneratedFiles", "Oracles"))
+    except:
+        pass
+
+    name = input("Enter the mode GUI/CMD or end for terminate: ")
+    name = name.upper()
+    while name != "END":
+        if name == "GUI":
+            try:
+                root = tk.Tk()
+                my_interface = Interface(root, "GithubDetector")
+                root.mainloop()
+                name = "END"
+            except tk.TclError as e:
+                print("Error, is impossible open a GUI for this reason: ", e)
+                print("Please, try with the CMD mode")
+                name = ""
+        elif name == "CMD":
+            print("What you want to do? 1-3 exit for terminate")
+            number = 1
+            for interface in interface_list:
+                print(number, ": ", interface)
+                number = number + 1
+            name = input()
+            while name != "exit":
+                if name == "1":
+                    print("Github Detector")
+                    print("Please enter the design pattern you want detect:")
+                    number = 1
+                    for dp in list(DesignPattern):
+                        print(number, ": ", dp.value)
+                        number = number + 1
+                    number_write = input()
+
+                    repository = input("Please enter the github you want analyze (Ex. advboxes\\Advbox): ")
+                    repository = repository.split("\\")
+
+                    debug_active = input("You want active the Debug Mode? Y/N: ").strip().upper()
+                    debug_active = 1 if debug_active == "Y" else 0
+
+                    delete_after = input("You want delete the repository at the end of detect? Y/N: ").strip().upper()
+                    delete_after = 1 if delete_after == "Y" else 0
+
+                    with open(os.path.join(resource_directory, "GeneratedFiles", "Oracles", "log.txt"), "a",
+                              encoding='utf-8') as f:
+                        string_to_add = execute(repository[0], repository[1], "", debug_active, None,
+                                                [list(DesignPattern)[int(number_write) - 1].value], None, delete_after)
+                        f.writelines("[1] " + repository[0] + "\\" + repository[1] + "\n" + string_to_add)
+                    name = "exit"
+                    break
+                elif name == "2":
+                    print("Oracle Test")
+                    print("Please enter what oracle you want execute:")
+                    number = 1
+                    for oracle in oracles_list:
+                        print(number, ": ", oracle)
+                        number = number + 1
+                    number_write = input()
+                    debug_active = input("You want active the Debug Mode? Y/N: ").strip().upper()
+                    debug_active = 1 if debug_active == "Y" else 0
+                    execute_test(oracles_list[int(number_write) - 1], debug_active, None, None)
+                    name = "exit"
+                    break
+                elif name == "exit":
+                    break
+                else:
+                    print("What you want to do? 1-3 exit for terminate")
+                    number = 1
+                    for interface in interface_list:
+                        print(number, ": ", interface)
+                        number = number + 1
+                    name = input()
+        elif name == "END":
+            break
+        else:
+            name = input("Enter the mode GUI/CMD or end for terminate: ")
+            name = name.upper()
+
+    print("Exit Status")

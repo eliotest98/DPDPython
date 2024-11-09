@@ -19,13 +19,13 @@ def compile_repository_files(path, terminal):
         counter = 1
         for dir in os.listdir(path):
             progressor.update(len(os.listdir(path)), counter, "Compiling Repository Files...", terminal)
-            if os.path.isfile(path + "\\" + dir):
-                compile_repository_files(path + "\\" + dir, terminal)
+            if os.path.isfile(os.path.join(path, dir)):
+                compile_repository_files(os.path.join(path, dir), terminal)
             else:
-                if os.listdir(path + "\\" + dir):
-                    compile_repository_files(path + "\\" + dir, terminal)
+                if os.listdir(os.path.join(path, dir)):
+                    compile_repository_files(os.path.join(path, dir), terminal)
                 else:
-                    compile_repository_files(path + "\\" + dir, terminal)
+                    compile_repository_files(os.path.join(path, dir), terminal)
             counter = counter + 1
     else:
         if not path.endswith(".pyc"):

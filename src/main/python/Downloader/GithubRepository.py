@@ -19,7 +19,7 @@ class GithubRepository:
         self.destination_folder = destination_folder
         self.repository_url = "https://github.com/" + repository_name
         split_name = repository_name.split("/")
-        self.folder = destination_folder + "\\" + split_name[0] + "\\" + split_name[1] + "\\Source"
+        self.folder = os.path.join(destination_folder, split_name[0], split_name[1], "Source")
         self.branch_name = branch_name
 
     def download_repository(self):
@@ -71,15 +71,32 @@ class GithubRepository:
         if os.path.isdir(directory):
             for dir in os.listdir(directory):
                 if not os.listdir(self.folder):
-                    os.removedirs(directory + "\\" + dir)
+                    os.removedirs(os.path.join(directory, dir))
                 else:
-                    self.delete_file_unused(directory + "\\" + dir)
+                    self.delete_file_unused(os.path.join(directory, dir))
         else:
             if not directory.endswith(".py"):
                 try:
                     os.remove(directory)
                 except:
                     pass
+
+    def delete_empty_folder(self, directory):
+        if os.path.isdir(directory):
+            list_dir = os.listdir(directory)
+            if list_dir.__len__() == 0:
+                os.removedirs(directory)
+            else:
+                for dir in list_dir:
+                    if not os.listdir(self.folder):
+                        os.removedirs(os.path.join(directory, dir))
+                    else:
+                        self.delete_empty_folder(os.path.join(directory, dir))
+
+    def delete_folders_unused(self):
+        print("Deleting all empty folders")
+        self.delete_empty_folder(self.folder)
+        print("Successfully Deleted!")
 
     def compile_repository_files(self, terminal):
         print("Compiling all files")
@@ -88,5 +105,8 @@ class GithubRepository:
 
     def delete_repository(self):
         print("Deleting Repository")
-        shutil.rmtree(self.destination_folder + "\\" + self.repository_name)
+        try:
+            shutil.rmtree(os.path.join(self.destination_folder, self.repository_name))
+        except FileNotFoundError:
+            pass
         print("Successfully Deleted!")
